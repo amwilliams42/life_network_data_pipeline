@@ -21,8 +21,11 @@ jobs:
       run: |
         echo "Deploying Prefect configurations using CLI container..."
         
+        # Change to the workspace directory where docker-compose.yaml is located
+        cd /workspace
+        
         # Copy prefect.yaml into the CLI container and run deployment
-        docker compose run --rm -v "$PWD:/repo" cli bash -c "
+        docker compose --profile cli run --rm -v "$GITHUB_WORKSPACE:/repo" cli bash -c "
           echo 'Copying updated prefect.yaml...'
           cp /repo/prefect.yaml ./prefect.yaml
           
@@ -44,7 +47,8 @@ jobs:
     - name: Verify Deployment
       run: |
         echo "Verifying deployments..."
-        docker compose run --rm cli bash -c "
+        cd /workspace
+        docker compose --profile cli run --rm cli bash -c "
           echo 'Listing all deployments:'
           prefect deployment ls
           
