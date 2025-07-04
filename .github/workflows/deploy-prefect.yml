@@ -1,4 +1,4 @@
-# .github/workflows/deploy-prefect.yml
+# .github/workflows/deploy-prefect.yml (for host-based runner)
 name: Deploy Prefect Deployments
 
 on:
@@ -11,48 +11,33 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, prefect-deploy]  # Use your self-hosted runner
+    runs-on: [self-hosted, prefect-deploy]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Deploy to Prefect Server
+      working-directory: /home/alex/pipeline  # Update this path
       run: |
-        ls -la
-        echo "Deploying Prefect configurations using CLI container..."
+        echo "Deploying Prefect configurations..."
         
-        # Change to the workspace directory where docker-compose.yaml is located
-        cd /workspace
-        
-        # Copy prefect.yaml into the CLI container and run deployment
-        docker compose --profile cli run --rm -v "$GITHUB_WORKSPACE:/repo" cli bash -c "
-          echo 'Copying updated prefect.yaml...'
+        # Copy prefect.yaml and deploy using your existing CLI container
+        docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli bash -c "
           cp /repo/prefect.yaml ./prefect.yaml
-          
-          echo 'Current working directory: \$(pwd)'
-          echo 'Available files:'
-          ls -la
-          
-          echo 'Checking prefect.yaml...'
-          if [ -f prefect.yaml ]; then
-            echo 'Found prefect.yaml, proceeding with deployment...'
-            prefect deploy --all
-            echo '✅ Deployment completed successfully!'
-          else
-            echo '❌ prefect.yaml not found!'
-            exit 1
-          fi
+          echo 'Deploying from prefect.yaml...'
+          prefect deploy --all
+          echo '✅ Deployment completed!'
         "
 
     - name: Verify Deployment
+      working-directory: /home/alex/pipeline  # Update this path
       run: |
         echo "Verifying deployments..."
-        cd /workspace
-        docker compose --profile cli run --rm cli bash -c "
-          echo 'Listing all deployments:'
+        docker compose run --rm cli bash -c "
+          echo 'Listing deployments:'
           prefect deployment ls
-          
-          echo 'Checking work pools:'
+          echo '---'
+          echo 'Listing work pools:'
           prefect work-pool ls
         "
