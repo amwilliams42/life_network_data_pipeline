@@ -25,6 +25,7 @@ jobs:
         # Copy prefect.yaml and deploy using your existing CLI container
         docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
           cp /repo/prefect.yaml ./prefect.yaml
+          ls -la
           echo 'Deploying from prefect.yaml...'
           prefect deploy --all
           echo '✅ Deployment completed!'
