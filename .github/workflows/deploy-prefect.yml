@@ -23,7 +23,7 @@ jobs:
         echo "Deploying Prefect configurations..."
         
         # Copy prefect.yaml and deploy using your existing CLI container
-        docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli bash -c "
+        docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
           cp /repo/prefect.yaml ./prefect.yaml
           echo 'Deploying from prefect.yaml...'
           prefect deploy --all
@@ -34,7 +34,7 @@ jobs:
       working-directory: /home/alex/pipeline  # Update this path
       run: |
         echo "Verifying deployments..."
-        docker compose run --rm cli bash -c "
+        docker compose run --rm cli -c "
           echo 'Listing deployments:'
           prefect deployment ls
           echo '---'
