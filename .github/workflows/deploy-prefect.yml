@@ -29,6 +29,7 @@ jobs:
           ls -la
           echo 'Deploying from prefect.yaml...'
           prefect deploy --all
+          ls -la
           echo '✅ Deployment completed!'
         "
 
