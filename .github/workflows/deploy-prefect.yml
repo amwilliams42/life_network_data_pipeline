@@ -19,7 +19,7 @@ jobs:
 
     - name: Deploy to Prefect Server
       run: |
-        ls -a
+        ls -la
         echo "Deploying Prefect configurations using CLI container..."
         
         # Change to the workspace directory where docker-compose.yaml is located
