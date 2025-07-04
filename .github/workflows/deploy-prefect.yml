@@ -1,0 +1,53 @@
+# .github/workflows/deploy-prefect.yml
+name: Deploy Prefect Deployments
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'prefect.yaml'
+      - 'flows/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, prefect-deploy]  # Use your self-hosted runner
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Prefect Server
+      run: |
+        echo "Deploying Prefect configurations using CLI container..."
+        
+        # Copy prefect.yaml into the CLI container and run deployment
+        docker compose run --rm -v "$PWD:/repo" cli bash -c "
+          echo 'Copying updated prefect.yaml...'
+          cp /repo/prefect.yaml ./prefect.yaml
+          
+          echo 'Current working directory: \$(pwd)'
+          echo 'Available files:'
+          ls -la
+          
+          echo 'Checking prefect.yaml...'
+          if [ -f prefect.yaml ]; then
+            echo 'Found prefect.yaml, proceeding with deployment...'
+            prefect deploy --all
+            echo '✅ Deployment completed successfully!'
+          else
+            echo '❌ prefect.yaml not found!'
+            exit 1
+          fi
+        "
+
+    - name: Verify Deployment
+      run: |
+        echo "Verifying deployments..."
+        docker compose run --rm cli bash -c "
+          echo 'Listing all deployments:'
+          prefect deployment ls
+          
+          echo 'Checking work pools:'
+          prefect work-pool ls
+        "
