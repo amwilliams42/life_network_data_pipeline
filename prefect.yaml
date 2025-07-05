@@ -20,7 +20,7 @@ pull:
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
 - prefect.deployments.steps.pip_install_requirements:
-    directory: {{ clone-step.directory }}
+    directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
     stream_output: False
 
