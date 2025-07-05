@@ -45,8 +45,8 @@ deployments:
   schedule:
     interval: 300
   parameters:
-    dataset: traumasoft_tn
-    source: tn_database
+    dataset_name: traumasoft_tn
+    source_name: tn_database
   entrypoint: flows/cad_import.py:load_cad_trips
   work_pool:
     name: pipeline_workflow
