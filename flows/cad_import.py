@@ -5,7 +5,7 @@ from prefect import flow, task
 from prefect.logging import get_run_logger
 
 
-@task
+@flow
 def load_cad_trips(
         dataset_name: str,
         source_name: str,
