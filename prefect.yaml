@@ -33,4 +33,4 @@ deployments:
     name: Deployment!
   work_pool:
     name: test_pool
-    work_queue_name: test_pool
+    work_queue_name: pipeline_workflow
