@@ -37,10 +37,10 @@ jobs:
     - name: Deploy to Prefect Server
       working-directory: /home/alex/pipeline  # Update this path
       run: |
-        pwd
-        ls -la
         echo "Deploying Prefect configurations..."
         docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
+          pwd
+          ls -la
           prefect deploy --all
           echo '✅ Deployment completed!'
         "
