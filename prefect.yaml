@@ -32,5 +32,5 @@ deployments:
   parameters:
     name: Deployment!
   work_pool:
-    name: test_pool
+    name: pipeline_workflow
     work_queue_name: pipeline_workflow
