@@ -15,9 +15,13 @@ push: null
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
 - prefect.deployments.steps.git_clone:
+    id: clone-step
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
+- prefect.deployments.steps.pip_install_requirements:
+    directory: {{ clone-step.directory }}
+    requirements_file: requirements.txt
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
