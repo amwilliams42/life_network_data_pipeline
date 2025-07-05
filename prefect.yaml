@@ -42,6 +42,6 @@ deployments:
   parameters:
     dataset: traumasoft_tn
     source: tn_database
-  entrypoint: flows/cad_import:load_cad_trips
+  entrypoint: flows/cad_import.py:load_cad_trips
   work_pool:
     name: pipeline_workflow
