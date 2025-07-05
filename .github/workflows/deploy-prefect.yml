@@ -26,13 +26,13 @@ jobs:
         echo "Copying Files..."
           docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
             cp /repo/prefect.yaml ./prefect.yaml
-            cp /repo/pyproject.tom ./pyproject.toml
+            cp /repo/pyproject.toml ./pyproject.toml
             pwd
             ls -la
         "
 
     - name: Install the project
-      run: uv sync --locked --all-extras --dev
+      run: uv sync --all-extras --dev
 
     - name: Deploy to Prefect Server
       working-directory: /home/alex/pipeline  # Update this path
