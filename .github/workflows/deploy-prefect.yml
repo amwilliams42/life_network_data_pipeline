@@ -17,19 +17,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Copy Files
+      working-directory: /home/alex/pipeline
+      run: |
+        echo "Copying Files..."
+          docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
+            cp /repo/prefect.yaml ./prefect.yaml
+            cp /repo/pyproject.tom ./pyproject.toml
+            pwd
+            ls -la
+        "
+
+    - name: Install the project
+      run: uv sync --locked --all-extras --dev
+
     - name: Deploy to Prefect Server
       working-directory: /home/alex/pipeline  # Update this path
       run: |
         echo "Deploying Prefect configurations..."
-        
-        # Copy prefect.yaml and deploy using your existing CLI container
         docker compose run --rm -v "$GITHUB_WORKSPACE:/repo" cli -c "
-          cp /repo/prefect.yaml ./prefect.yaml
-          pwd
-          ls -la
-          echo 'Deploying from prefect.yaml...'
           prefect deploy --all
-          ls -la
           echo '✅ Deployment completed!'
         "
 

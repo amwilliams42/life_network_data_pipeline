@@ -5,6 +5,6 @@ description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
     "dlt[postgres]>=1.12.3",
-    "prefect>=3.4.7",
+    "prefect[github]>=3.4.7",
     "pymysql>=1.1.1",
 ]
