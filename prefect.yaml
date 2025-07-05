@@ -17,7 +17,7 @@ pull:
 - prefect.deployments.steps.git_clone:
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
-    credentials: "{{ prefect.blocks.secret.pipeline-github-token }}"
+    access_token: "{{ prefect.blocks.secret.pipeline-github-token }}"
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
