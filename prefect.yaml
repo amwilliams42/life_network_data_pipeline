@@ -34,3 +34,12 @@ deployments:
   work_pool:
     name: pipeline_workflow
     work_queue_name: pipeline_workflow
+- name: TN Pull CAD Trips
+  version: null
+  description: Pull new and updated CAD trips for TN and MS every 5 minutes
+  schedule:
+    interval: 300
+  parameters:
+    dataset: traumasoft_tn
+    source: tn_database
+  entrypoint:

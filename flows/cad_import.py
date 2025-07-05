@@ -1,7 +1,4 @@
-# flake8: noqa
 import datetime
-from typing import Sequence, Tuple
-
 import dlt
 from dlt.sources.sql_database import sql_database, sql_table, Table
 from prefect import flow, task
@@ -14,7 +11,6 @@ def load_cad_trips(
         source_name: str,
 ) -> None:
     logger = get_run_logger()
-
     pipeline = dlt.pipeline(
         pipeline_name="load_cad_trips",
         destination='postgres',
@@ -41,15 +37,3 @@ def load_cad_trips(
 
     info = pipeline.run(tn_db)
     logger.info(info)
-
-
-@flow
-def trips_pipeline(
-        dataset: str,
-        source: str
-) -> None:
-    load_cad_trips(dataset, source)
-
-if __name__ == "__main__":
-    trips_pipeline("traumasoft_tn","tn_database")
-
