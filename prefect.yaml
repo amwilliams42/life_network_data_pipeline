@@ -22,17 +22,11 @@ pull:
 - prefect.deployments.steps.run_shell_script:
     script: |
       echo "Post-clone: Setting up secrets..."
-      
-      # Check if source secrets file exists
       if [ ! -f "/host-secrets/secrets.toml" ]; then
         echo "ERROR: Secrets file not found at /host-secrets/secrets.toml"
         exit 1
       fi
-      
-      # Create .dlt directory
       mkdir -p .dlt
-      
-      # Copy secrets file
       cp /host-secrets/secrets.toml .dlt/secrets.toml
       chmod 600 .dlt/secrets.toml
       
