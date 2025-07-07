@@ -20,19 +20,7 @@ pull:
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
 - prefect.deployments.steps.run_shell_script:
-    script: |
-      echo "Post-clone: Setting up secrets..."
-      if [ ! -f "/host-secrets/secrets.toml" ]; then
-        echo "ERROR: Secrets file not found at /host-secrets/secrets.toml"
-        exit 1
-      fi
-      mkdir -p .dlt
-      cp /host-secrets/secrets.toml .dlt/secrets.toml
-      chmod 600 .dlt/secrets.toml
-      
-      echo "✅ Secrets file copied successfully"
-      echo "Working directory: $(pwd)"
-      echo "Secrets file size: $(stat -c%s .dlt/secrets.toml) bytes"
+    script: mkdir -p .dlt && cp /host-secrets/secrets.toml .dlt/secrets.toml && chmod 600 .dlt/secrets.toml
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
