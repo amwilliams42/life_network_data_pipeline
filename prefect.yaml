@@ -28,7 +28,7 @@ pull:
     script: cp /host-secrets/secrets.toml life_network_data_pipeline./dlt/secrets.toml
 - prefect.deployments.steps.run_shell_script:
     id: chmod-secrets
-    script: chmod 600 .dlt/secrets.toml
+    script: chmod 600 life_network_data_pipeline./dlt/secrets.toml
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
