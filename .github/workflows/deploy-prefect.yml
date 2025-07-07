@@ -17,14 +17,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Create environment file for secrets
+    - name: Create persistent secrets file
       run: |
-        # Create .env file that docker-compose will use
-        cat > /home/alex/pipeline/.env << 'EOF'
-        DLT_SECRETS_TOML=${{ secrets.SECRETS_TOML }}
-        EOF
-        chmod 600 /home/alex/pipeline/.env
-        echo "Environment file created"
+        # Create secrets directory if it doesn't exist
+        mkdir -p /home/alex/prefect-secrets
+        
+        # Create the secrets.toml file in a persistent location
+        echo '${{ secrets.SECRETS_TOML }}' > /home/alex/prefect-secrets/secrets.toml
+        
+        chmod 600 /home/alex/prefect-secrets/secrets.toml
 
     - name: Deploy to Prefect Server
       working-directory: /home/alex/pipeline  # Update this path
