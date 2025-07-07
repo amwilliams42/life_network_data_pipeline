@@ -19,6 +19,14 @@ pull:
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
+- prefect.deployments.steps.run_shell_script:
+    script: |
+      echo "Post-clone: Creating secrets.toml from environment..."
+      mkdir -p .dlt
+      echo "$DLT_SECRETS_TOML" > .dlt/secrets.toml
+      chmod 600 .dlt/secrets.toml
+      echo "Secrets file created in $(pwd)/.dlt/"
+      ls -la .dlt/
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
