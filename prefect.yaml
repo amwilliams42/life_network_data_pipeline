@@ -52,3 +52,5 @@ deployments:
   parameters:
     dataset_name: traumasoft_tn
     source_name: tn_database
+  work_pool:
+    name: pipeline_workflow
