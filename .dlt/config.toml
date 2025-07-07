@@ -6,7 +6,7 @@ log_level="WARNING"  # the system log level of dlt
 dlthub_telemetry = true
 
 [sources.tn_database]
-tables = ["cad_trip_legs", "cad_trip_legs_rev"]
+tables = ["cad_trip_legs", "cad_trip_legs_rev", "cad_trip_leg_shift_assignments"]
 
 [sources.tn_database.table_config]
 cad_trip_legs = {incremental = {cursor_column = "modified"}, write_disposition="merge", primary_key=["id"], merge_key=["id"]}

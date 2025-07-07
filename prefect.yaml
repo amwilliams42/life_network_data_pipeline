@@ -27,12 +27,8 @@ pull:
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
 - name: Test Deployment
-  version: null
-  tags: []
-  description: null
   schedule:
     cron: "*/10 * * * *"
-  flow_name: null
   entrypoint: hello_world.py:hello_world
   parameters:
     name: Deployment! TEST
@@ -40,7 +36,6 @@ deployments:
     name: pipeline_workflow
     work_queue_name: pipeline_workflow
 - name: TN Pull CAD Trips
-  version: null
   description: Pull new and updated CAD trips for TN and MS every 5 minutes
   schedule:
     interval: 300
@@ -50,3 +45,10 @@ deployments:
   entrypoint: flows/cad_import.py:load_cad_trips
   work_pool:
     name: pipeline_workflow
+- name: TN Daily Pull
+  schedule:
+    cron: "0 2 * * *"
+  entrypoint: flows/daily_import.py:daily_import
+  parameters:
+    dataset_name: traumasoft_tn
+    source_name: tn_database

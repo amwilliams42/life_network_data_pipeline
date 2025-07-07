@@ -17,6 +17,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Create secrets.toml
+      run: |
+        echo '${{ secrets.SECRETS_TOML }}' > .dlt/secrets.toml
+
     - name: Deploy to Prefect Server
       working-directory: /home/alex/pipeline  # Update this path
       run: |
