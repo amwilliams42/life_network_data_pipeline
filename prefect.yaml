@@ -20,11 +20,11 @@ pull:
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
 - prefect.deployments.steps.run_shell_script:
-    script: mkdir -p .dlt
+    id: copy-secrets
+    script: cp /host-secrets/secrets.toml .dlt/secrets.toml
 - prefect.deployments.steps.run_shell_script:
-  script: cp /host-secrets/secrets.toml .dlt/secrets.toml
-- prefect.deployments.steps.run_shell_script:
-  script: chmod 600 .dlt/secrets.toml
+    id: chmod-secrets
+    script: chmod 600 .dlt/secrets.toml
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
