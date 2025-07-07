@@ -20,6 +20,10 @@ pull:
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
 - prefect.deployments.steps.run_shell_script:
+    id: ls
+    script: ls -la
+    stream_output: true
+- prefect.deployments.steps.run_shell_script:
     id: copy-secrets
     script: cp /host-secrets/secrets.toml .dlt/secrets.toml
 - prefect.deployments.steps.run_shell_script:
