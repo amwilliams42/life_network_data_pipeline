@@ -20,12 +20,12 @@ pull:
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
 - prefect.deployments.steps.run_shell_script:
-    id: ls
-    script: ls -la
+    id: mkdir
+    script: mkdir -p life_network_data_pipeline./dlt
     stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: copy-secrets
-    script: cp /host-secrets/secrets.toml .dlt/secrets.toml
+    script: cp /host-secrets/secrets.toml life_network_data_pipeline./dlt/secrets.toml
 - prefect.deployments.steps.run_shell_script:
     id: chmod-secrets
     script: chmod 600 .dlt/secrets.toml
