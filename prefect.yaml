@@ -19,7 +19,7 @@ pull:
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
-- prefect_docker.deployments.steps.run_shell_script:
+- prefect.deployments.steps.run_shell_script:
     script: |
       echo "Post-clone: Setting up secrets..."
       
