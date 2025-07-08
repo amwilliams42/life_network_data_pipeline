@@ -63,7 +63,7 @@ deployments:
     name: pipeline_workflow
 - name: TN Schedule Pull
   schedule:
-    interval: 600
+    interval: 300
   entrypoint: flows/schedule_flows.py:schedule_refresh_flow
   parameters:
     dataset_name: traumasoft_tn
