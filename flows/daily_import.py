@@ -17,6 +17,12 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
                      'job_title_id', 'first_name', 'last_name', 'preferred_first_name', 'email_address', 'user_group',
                      'user_division', 'division', 'disabled', 'deactivated']),
     ('sched_units', None, None),
+    ('sched_unit_certification_templates', None, None),
+    ('cost_centers', None, None),
+    ('sched_unit_personnel', None, None),
+    ('sched_shifts', None, None),
+    ('timesheet', 'last_updated', None),
+    ('sched_template_shift_assignments', 'draft_modified', ['id', 'template_id', 'user_id', 'shift_id', 'start_time', 'end_time', 'schedule_id', 'unit_id', 'vehicle_id', ])
 ]
 
 @task
@@ -46,8 +52,18 @@ def daily_import_pipeline(
         table_source = sql_table(
             credentials=dlt.secrets[f"sources.{source_name}.credentials"],
             table=table_name,
+
             included_columns=columns_to_pull
         )
+
+        if modified_column:
+            table_source.apply_hints(
+                incremental=dlt.sources.incremental(
+                    modified_column,
+                    initial_value=datetime.datetime(2025,1,1,0,0,0)
+                )
+            )
+
         table_sources.append(table_source)
         logger.info(f"Configured table: {table_name}")
 
