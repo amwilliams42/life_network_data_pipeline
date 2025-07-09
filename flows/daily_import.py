@@ -22,7 +22,6 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('sched_unit_personnel', None, None),
     ('sched_shifts', None, None),
     ('timesheet', 'last_updated', None),
-    ('sched_template_shift_assignments', 'draft_modified', ['id', 'template_id', 'user_id', 'shift_id', 'start_time', 'end_time', 'schedule_id', 'unit_id', 'vehicle_id', ])
 ]
 
 @task
