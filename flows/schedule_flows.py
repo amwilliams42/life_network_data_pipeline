@@ -15,7 +15,7 @@ def schedule_refresh(
 
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name="daily_import",
+        pipeline_name=f"sched_template_{dataset_name}",
         destination='postgres',
         dataset_name=dataset_name,
     )
@@ -55,4 +55,6 @@ def schedule_refresh_flow(
 
 if __name__ == "__main__":
     schedule_refresh_flow("traumasoft_tn","tn_database")
+    schedule_refresh_flow("traumasoft_il", "il_database")
+    schedule_refresh_flow("traumasoft_mi", "mi_database")
 
