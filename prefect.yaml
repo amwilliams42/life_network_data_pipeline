@@ -32,7 +32,7 @@ pull:
     stream_output: False
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
-    script: dbt deps
+    script: dbt deps --project-dir ./lan_dbt/
     stream_output: true
 
 # the deployments section allows you to provide configuration for deploying flows
