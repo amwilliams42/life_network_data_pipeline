@@ -19,6 +19,7 @@ pull:
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
+    stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: mkdir
     script: mkdir -p /var/dlt
@@ -29,7 +30,7 @@ pull:
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
-    stream_output: False
+    stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
     script: "dbt deps --project-dir {{ clone-step.directory }}/lan_dbt/"
