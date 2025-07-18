@@ -9,6 +9,7 @@ from prefect_dbt.cli.commands import trigger_dbt_cli_command
 def run_dbt():
     logger = get_run_logger()
     logger.info(os.system("uv pip list"))
+    logger.info(os.system("ls -a"))
     trigger_dbt_cli_command(
         command="dbt deps", project_dir="./lan_dbt/",
     )
