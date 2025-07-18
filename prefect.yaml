@@ -74,5 +74,5 @@ deployments:
   schedule:
     cron: "0 2 * * *"
   entrypoint: flows/dbt.py:run_dbt
-  work_poo:
+  work_pool:
     name: pipeline_workflow
