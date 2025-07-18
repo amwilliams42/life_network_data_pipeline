@@ -32,7 +32,7 @@ pull:
     stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
-    script: "uv run dbt deps --project-dir {{ clone-step.directory }}/lan_dbt/"
+    script: "uv run dbt deps --project-dir {{ clone-step.directory }}/life_network_data_pipeline/lan_dbt/"
     stream_output: true
 
 # the deployments section allows you to provide configuration for deploying flows
