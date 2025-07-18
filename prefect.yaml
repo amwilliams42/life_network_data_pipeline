@@ -32,7 +32,7 @@ pull:
     stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: lsa
-    script: echo {{ clone-step.directory}}
+    script: ls -a
     stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
