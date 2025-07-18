@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
+    "dbt>=1.0.0.40.5",
     "dbt-core>=1.10.3",
     "dbt-postgres>=1.9.0",
     "dlt[postgres]>=1.12.3",
