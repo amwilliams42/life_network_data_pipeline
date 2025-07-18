@@ -36,7 +36,7 @@ pull:
     stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: dbt
-    script: dbt deps --project-dir ./life_network_data_pipeline-master/lan_dbt
+    script: cd ./life_network_data_pipeline-master/lan_dbt && dbt deps
     stream_output: True
 
 
