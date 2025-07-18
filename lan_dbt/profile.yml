@@ -1,0 +1,12 @@
+profile:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: warehouse
+      user: "{{ env_var('WAREHOUSE_USER') }}"
+      password: "{{ env_var('WAREHOUSE_PASS') }}"
+      port: 5437
+      dbname: warehouse
+      threads: 8
+

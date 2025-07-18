@@ -12,28 +12,41 @@ def load_cad_trips(
 ) -> None:
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name="load_cad_trips",
+        pipeline_name=f"load_cad_trips_{dataset_name}",
         destination='postgres',
         dataset_name=dataset_name,
     )
 
-    tn_db = sql_database(
+    cad_trip_legs_rev = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
-        table_names=dlt.config[f"sources.{source_name}.tables"],
+        table="cad_trip_legs_rev",
     )
 
-    tn_db.cad_trip_legs.apply_hints(
-        incremental=dlt.sources.incremental(
-            "created",
-            initial_value=datetime.datetime(2025,6,1,0,0,0)
-        ),primary_key="id"
-    )
-    tn_db.cad_trip_legs_rev.apply_hints(
+    cad_trip_legs_rev.apply_hints(
         incremental=dlt.sources.incremental(
             "modified",
             initial_value=datetime.datetime(2025,6,1,0,0,0)
         ),primary_key="leg_id"
     )
 
-    info = pipeline.run(tn_db)
+    cad_trip_legs = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="cad_trip_legs",
+    )
+
+    cad_trip_legs.apply_hints(
+        incremental=dlt.sources.incremental(
+            'created',
+            initial_value=datetime.datetime(2024,1,1,0,0,0)
+        ),primary_key="id"
+    )
+
+
+
+    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs])
     logger.info(info)
+
+if __name__ == "__main__":
+    load_cad_trips("traumasoft_tn","tn_database")
+    load_cad_trips("traumasoft_mi","mi_database")
+    load_cad_trips("traumasoft_il","il_database")

@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: "User dimension table containing all user information"
+    columns:
+      - name: user_id
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+      - name: employee_num
+        description: "Employee number"
+      - name: employee_level
+        description: "Employee level"
+      - name: employee_licensure
+        description: "Employee licensure"
+      - name: username
+        description: "Username"
+      - name: job_title
+        description: "Job title"
+      - name: job_title_id
+        description: "Job title ID"
+      - name: first_name
+        description: "First name"
+      - name: last_name
+        description: "Last name"
+      - name: preferred_first_name
+        description: "Preferred first name"
+      - name: display_name
+        description: "Display name (preferred_first_name if available, otherwise first_name)"
+      - name: email_address
+        description: "Email address"
+      - name: user_group
+        description: "User group"
+      - name: user_division
+        description: "User division"
+      - name: division
+        description: "Division"
+      - name: disabled
+        description: "Whether the user is disabled"
+      - name: deactivated
+        description: "Whether the user is deactivated"
+      - name: _dbt_batch_id
+        description: "Batch ID from DBT run"
+      - name: _dbt_loaded_at
+        description: "Timestamp when this record was loaded"

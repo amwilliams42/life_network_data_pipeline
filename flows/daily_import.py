@@ -78,3 +78,5 @@ def daily_import(
 
 if __name__ == "__main__":
     daily_import("traumasoft_tn", "tn_database")
+    daily_import("traumasoft_il", "il_database")
+    daily_import("traumasoft_mi", "mi_database")
