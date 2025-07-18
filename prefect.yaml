@@ -32,7 +32,7 @@ pull:
     stream_output: False
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
-    script: ls -a
+    script: dbt deps --project-dir ./life_network_data_pipeline/lan_dbt/
     stream_output: true
 
 # the deployments section allows you to provide configuration for deploying flows
