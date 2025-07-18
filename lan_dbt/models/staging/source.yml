@@ -365,6 +365,11 @@ sources:
           - name: _dlt_id
             data_type: character varying
       - name: cost_centers
+      - name: cad_trip_legs_rev
+      - name: cad_trip_legs
+      - name: ibd_level_of_service
+      - name: cad_sources
+      - name: ibd_subzones
 
   - name: traumasoft_mi
     tables:
@@ -732,7 +737,11 @@ sources:
           - name: _dlt_id
             data_type: character varying
       - name: cost_centers
-
+      - name: cad_trip_legs_rev
+      - name: cad_trip_legs
+      - name: ibd_level_of_service
+      - name: cad_sources
+      - name: ibd_subzones
 
   - name: traumasoft_il
     tables:
@@ -1100,3 +1109,8 @@ sources:
           - name: _dlt_id
             data_type: character varying
       - name: cost_centers
+      - name: cad_trip_legs_rev
+      - name: cad_trip_legs
+      - name: ibd_level_of_service
+      - name: cad_sources
+      - name: ibd_subzones

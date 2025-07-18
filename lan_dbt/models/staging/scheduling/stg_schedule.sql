@@ -8,10 +8,18 @@ with {% for dataset in datasets %}
     select
         stsa.id,
         uct.template_name as shift_qualification,
-        CONCAT(users.last_name, ', ', users.first_name) as name,
+        COALESCE(
+            CASE
+                WHEN users.last_name IS NOT NULL AND users.first_name IS NOT NULL THEN
+                    CONCAT(users.last_name, ', ', users.first_name)
+                ELSE NULL
+            END,
+            'OPEN'
+        ) as name,
         stsa.date_line,
         unit.name as shift_name,
         stsa.cost_center_id,
+        scc.name as cost_center_name,
         scc.name as shift_cc,
         stsa.start_time as shift_start,
         stsa.end_time as shift_end,
@@ -19,11 +27,16 @@ with {% for dataset in datasets %}
             EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)
         ) / 3600 as scheduled_length,
         CASE
-            WHEN ts.time_end_ts = 0 OR ts.time_end_ts IS NULL THEN
-                (EXTRACT(EPOCH FROM NOW()) - ts.time_start_ts)
-            ELSE
-                (ts.time_end_ts - ts.time_start_ts)
-        END / 3600 AS worked,
+            WHEN users.last_name IS NOT NULL AND users.first_name IS NOT NULL THEN
+                0
+            ELSE (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600
+        END as open_hours,
+    CASE
+        WHEN ts.time_end_ts = 0 OR ts.time_end_ts IS NULL THEN
+            EXTRACT(EPOCH FROM (NOW() - to_timestamp(ts.time_start_ts)))
+        ELSE
+            EXTRACT(EPOCH FROM (to_timestamp(ts.time_end_ts) - to_timestamp(ts.time_start_ts)))
+    END / 3600.0 AS worked,
         '{{ suffix }}' as source_database
 
     from {{ source(dataset,'sched_template_shift_assignments') }} as stsa
@@ -50,8 +63,7 @@ with {% for dataset in datasets %}
                 AND ts.time_start_ts < EXTRACT(EPOCH FROM stsa.end_time)
             )
         )
-    )
-
+    ) where stsa.deleted = '0' and stsa.earning_code_id=1
 ),
 
 {% endfor %}
