@@ -32,11 +32,11 @@ pull:
     stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: lsa
-    script: ls -a {{clone-step.directory}}
+    script: ls -a {{clone-step.directory}}/lan_dbt
     stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
-    script: uv run dbt deps --project-dir {{clone-step.directory}}/lan_dbt/
+    script: uv run dbt deps --project-dir {{clone-step.directory}}/lan_dbt --profiles-dir {{clone-step.directory}}/lan_dbt
     stream_output: True
 
 # the deployments section allows you to provide configuration for deploying flows
