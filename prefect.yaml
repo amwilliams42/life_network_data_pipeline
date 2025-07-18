@@ -32,7 +32,7 @@ pull:
     stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: lsa
-    script: "ls -a"
+    script: "echo $(ls -a)"
     stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
