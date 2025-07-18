@@ -26,28 +26,6 @@ jobs:
         echo '${{ secrets.SECRETS_TOML }}' > /home/alex/prefect-secrets/secrets.toml
         
         chmod 600 /home/alex/prefect-secrets/secrets.toml
-
-    - name: Deploy to Prefect Server
-      working-directory: /home/alex/pipeline  # Update this path
+    - name: Copy Files Over
       run: |
-        export GITHUB_WORKSPACE=${{ github.workspace }}
-        docker compose up -d
-        echo "Deploying Prefect configurations..."
-        docker compose run cli -c "
-          pwd
-          ls -la
-          prefect deploy --all
-          echo 'Deployment completed!'
-        "
-
-    - name: Verify Deployment
-      working-directory: /home/alex/pipeline  # Update this path
-      run: |
-        echo "Verifying deployments..."
-        docker compose run --rm cli -c "
-          echo 'Listing deployments:'
-          prefect deployment ls
-          echo '---'
-          echo 'Listing work pools:'
-          prefect work-pool ls
-        "
+        cp -R $GITHUB_WORKSPACE/* /home/alex/pipeline/
