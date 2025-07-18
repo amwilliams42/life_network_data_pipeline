@@ -34,6 +34,10 @@ pull:
     id: lsa
     script: cat {{clone-step.directory}}/lan_dbt/dbt_project.yml
     stream_output: True
+- prefect.deployments.steps.run_shell_script:
+    id: dbt
+    script: dbt -h
+    stream_output: True
 
 
 # the deployments section allows you to provide configuration for deploying flows
