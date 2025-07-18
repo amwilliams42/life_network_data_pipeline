@@ -78,6 +78,6 @@ deployments:
 - name: DBT Run
   schedule:
     cron: "0 2 * * *"
-  entrypoint: flows/dbt.py:run_dbt
+  entrypoint: flows/dbt.py:trigger_dbt_cli_command
   work_pool:
     name: pipeline_workflow
