@@ -19,7 +19,6 @@ pull:
     repository: https://github.com/amwilliams42/life_network_data_pipeline.git
     branch: master
     access_token: "{{ prefect.blocks.secret.github-pat }}"
-    stream_output: true
 - prefect.deployments.steps.run_shell_script:
     id: mkdir
     script: mkdir -p /var/dlt
