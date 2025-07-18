@@ -31,6 +31,10 @@ pull:
     requirements_file: requirements.txt
     stream_output: true
 - prefect.deployments.steps.run_shell_script:
+    id: lsa
+    script: "ls -a"
+    stream_output: true
+- prefect.deployments.steps.run_shell_script:
     id: dbt deps
     script: "uv run dbt deps --project-dir ./lan_dbt/"
     stream_output: true
