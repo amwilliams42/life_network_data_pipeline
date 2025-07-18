@@ -29,15 +29,15 @@ pull:
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
     requirements_file: requirements.txt
-    stream_output: true
+    stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: lsa
-    script: ["ls","a"]
-    stream_output: true
+    script: "ls -a"
+    stream_output: True
 - prefect.deployments.steps.run_shell_script:
     id: dbt deps
     script: "uv run dbt deps --project-dir ./lan_dbt/"
-    stream_output: true
+    stream_output: True
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
