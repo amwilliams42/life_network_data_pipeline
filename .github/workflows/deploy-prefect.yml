@@ -26,6 +26,3 @@ jobs:
         echo '${{ secrets.SECRETS_TOML }}' > /home/alex/prefect-secrets/secrets.toml
         
         chmod 600 /home/alex/prefect-secrets/secrets.toml
-    - name: Copy Files Over
-      run: |
-        cp -R $GITHUB_WORKSPACE/* /home/alex/pipeline/
