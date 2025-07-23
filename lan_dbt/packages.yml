@@ -2,4 +2,4 @@ packages:
   - package: dbt-labs/codegen
     version: 0.13.1
   - package: brooklyn-data/dbt_artifacts
-    version: 2.2.1
+    version: 2.9.3
