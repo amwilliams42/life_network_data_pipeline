@@ -27,4 +27,7 @@ combined as (
     select * from mi_users
 )
 
-select * from combined
+select
+    *,
+    user_id || '_' || source_database as surrogate_key
+from combined

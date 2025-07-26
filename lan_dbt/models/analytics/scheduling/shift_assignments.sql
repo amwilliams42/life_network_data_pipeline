@@ -5,12 +5,12 @@ WITH
         SELECT DISTINCT
             shift_name,
             shift_start AS time_point
-        FROM {{ref('stg_schedule')}}
+        FROM {{ref('schedule')}}
         UNION
         SELECT DISTINCT
             shift_name,
             shift_end AS time_point
-        FROM {{ref('stg_schedule')}}
+        FROM {{ref('schedule')}}
     ),
     intervals AS (
         SELECT
@@ -42,7 +42,7 @@ WITH
             (EXTRACT(EPOCH FROM i.end_time) - EXTRACT(EPOCH FROM i.start_time)) / 3600 AS interval_duration_hours
         FROM
             intervals i
-            JOIN {{ref('stg_schedule')}} s on i.shift_name = s.shift_name
+            JOIN {{ref('schedule')}} s on i.shift_name = s.shift_name
             AND s.shift_start <= i.start_time
             AND s.shift_end > i.start_time
             AND s.shift_end >= i.end_time

@@ -1,11 +1,15 @@
 version: 2
 
 models:
-  - name: stg_traumasoft_tn__users
-    description: "Staged user data from Traumasoft TN"
+  - name: users
+    description: "Staged user data from Traumasoft TN, MI, and IL"
     columns:
       - name: user_id
         description: "The primary key for this table"
+        tests:
+          - not_null
+      - name: surrogate_key
+        description: "Surrogate key combo of source db and user_id"
         tests:
           - unique
           - not_null
@@ -39,7 +43,43 @@ models:
         description: "Whether the user is disabled"
       - name: deactivated
         description: "Whether the user is deactivated"
-      - name: _dbt_batch_id
-        description: "Batch ID from DBT run"
-      - name: _dbt_loaded_at
-        description: "Timestamp when this record was loaded"
+      - name: _dlt_load_id
+        description: "Load ID from DLT run"
+      - name: _dlt_id
+        description: "ID from DLT"
+      - name: source_database
+        description: "Source database (tn, mi, il)"
+
+  - name: schedule
+    description: "Staged schedule data from Traumasoft TN, MI, and IL"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        tests:
+          - not_null
+      - name: shift_qualification
+        description: "Qualification required for the shift"
+      - name: name
+        description: "Name of the person assigned to the shift, or 'OPEN' if unassigned"
+      - name: date_line
+        description: "Date of the shift"
+      - name: shift_name
+        description: "Name of the shift"
+      - name: cost_center_id
+        description: "ID of the cost center"
+      - name: cost_center_name
+        description: "Name of the cost center"
+      - name: shift_cc
+        description: "Cost center of the shift"
+      - name: shift_start
+        description: "Start time of the shift"
+      - name: shift_end
+        description: "End time of the shift"
+      - name: scheduled_length
+        description: "Length of the shift in hours"
+      - name: open_hours
+        description: "Number of open hours if shift is unassigned, 0 otherwise"
+      - name: worked
+        description: "Number of hours worked"
+      - name: source_database
+        description: "Source database (tn, mi, il)"

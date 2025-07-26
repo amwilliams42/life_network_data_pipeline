@@ -1,5 +1,5 @@
 version: 2
 
 models:
-  - name: mart_shift_assignments
+  - name: shift_assignments
     description: "Shift assigments"
