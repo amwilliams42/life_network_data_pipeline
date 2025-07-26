@@ -31,6 +31,7 @@ models:
     # Staging models are ephemeral by default
     staging:
       +materialized: view
+      +schema: staging
     analytics:
       +materialized: view
       +schema: analytics

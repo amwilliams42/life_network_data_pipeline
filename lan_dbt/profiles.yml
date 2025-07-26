@@ -9,5 +9,5 @@ lan_dbt:
       port: 5432
       dbname: warehouse
       threads: 8
-      schema: analytics
+      schema: warehouse
 
