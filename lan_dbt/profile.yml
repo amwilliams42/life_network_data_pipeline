@@ -1,4 +1,4 @@
-profile:
+lan_dbt:
   target: prod
   outputs:
     prod:
