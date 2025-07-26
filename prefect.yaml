@@ -37,6 +37,45 @@ pull:
 
 
 # the deployments section allows you to provide configuration for deploying flows
+# Welcome to your prefect.yaml file! You can use this file for storing and managing
+# configuration for deploying your flows. We recommend committing this file to source
+# control along with your flow code.
+
+# Generic metadata about this project
+name: life_network_data_pipeline
+prefect-version: 3.4.7
+
+# build section allows you to manage and build docker images
+build: null
+
+# push section allows you to manage if and how this project is uploaded to remote locations
+push: null
+
+# pull section allows you to provide instructions for cloning this project in remote locations
+pull:
+  - prefect.deployments.steps.git_clone:
+      id: clone-step
+      repository: https://github.com/amwilliams42/life_network_data_pipeline.git
+      branch: master
+      access_token: "{{ prefect.blocks.secret.github-pat }}"
+  - prefect.deployments.steps.run_shell_script:
+      id: mkdir
+      script: mkdir -p /var/dlt
+      stream_output: true
+  - prefect.deployments.steps.run_shell_script:
+      id: copy-secrets
+      script: cp /host-secrets/secrets.toml /var/dlt/secrets.toml
+  - prefect.deployments.steps.pip_install_requirements:
+      directory: "{{ clone-step.directory }}"
+      requirements_file: requirements.txt
+      stream_output: True
+  - prefect.deployments.steps.run_shell_script:
+      id: lsa
+      script: cat {{clone-step.directory}}/lan_dbt/dbt_project.yml
+      stream_output: True
+
+
+# the deployments section allows you to provide configuration for deploying flows
 # Define reusable configuration templates
 _templates:
   # Common work pool configuration
@@ -50,7 +89,24 @@ _templates:
   daily_2am_schedule: &daily_2am_schedule
     cron: "0 2 * * *"
 
-  # State-specific configurations
+  # Tag configurations
+  tags:
+    tn_tags: &tn_tags
+      - "state:tn"
+      - "tennessee"
+    mi_tags: &mi_tags
+      - "state:mi"
+      - "michigan"
+    il_tags: &il_tags
+      - "state:il"
+      - "illinois"
+    global_tags: &global_tags
+      - "pipeline"
+    test_tags: &test_tags
+      - "test"
+      - "development"
+
+  # State-specific configurations with tags
   states:
     tn: &state_tn
       dataset_name: traumasoft_tn
@@ -88,51 +144,62 @@ deployments:
     parameters:
       name: Deployment! TEST
     work_pool: *default_work_pool
+    tags: *test_tags
   
   # CAD Trips imports
   - <<: *cad_import_template
     name: TN Pull CAD Trips
     description: Pull new and updated CAD trips for TN and MS every 5 minutes
     parameters: *state_tn
+    tags: *tn_tags
 
   - <<: *cad_import_template
     name: MI Pull CAD Trips
     description: Pull new and updated CAD trips for MI every 5 minutes
     parameters: *state_mi
+    tags: *mi_tags
 
   - <<: *cad_import_template
     name: IL Pull CAD Trips
     description: Pull new and updated CAD trips for IL every 5 minutes
     parameters: *state_il
+    tags: *il_tags
   
   # Daily imports
   - <<: *daily_import_template
     name: TN Daily Pull
     parameters: *state_tn
+    tags: *tn_tags
 
   - <<: *daily_import_template
     name: MI Daily Pull
     parameters: *state_mi
+    tags: *mi_tags
 
   - <<: *daily_import_template
     name: IL Daily Pull
     parameters: *state_il
+    tags: *il_tags
   
   # Schedule pulls
   - <<: *schedule_pull_template
     name: TN Schedule Pull
     parameters: *state_tn
+    tags: *tn_tags
 
   - <<: *schedule_pull_template
     name: MI Schedule Pull
     parameters: *state_mi
+    tags: *mi_tags
 
   - <<: *schedule_pull_template
     name: IL Schedule Pull
     parameters: *state_il
+    tags: *il_tags
   
   # DBT deployment
   - name: DBT Run
     schedule: *daily_2am_schedule
     entrypoint: flows/dbt.py:run_dbt
     work_pool: *default_work_pool
+    tags: *global_tags
