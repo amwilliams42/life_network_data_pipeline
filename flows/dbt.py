@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from prefect import flow, get_run_logger
 from prefect_shell import ShellOperation
+from prefect.blocks.system import Secret
 
 # Extract constants for better maintainability
 DBT_COMMANDS = ["dbt deps", "dbt build"]
@@ -10,6 +11,9 @@ DEFAULT_DBT_DIR = "./lan_dbt"
 @flow(name="dbt-flow", log_prints=True)
 def run_dbt():
     logger = get_run_logger()
+
+    db_user = Secret.load("warehouse-user")
+    db_password = Secret.load("warehouse-password")
     
     # Validate directory exists and contains dbt_project.yml
     dbt_path = Path(DEFAULT_DBT_DIR).resolve()
@@ -24,7 +28,10 @@ def run_dbt():
         try:
             shell_operation = ShellOperation(
                 commands=[command],
-                working_dir=str(dbt_path)
+                working_dir=str(dbt_path),
+                env={"DBT_PROFILES_DIR": str(dbt_path),
+                     "WAREHOUSE_USER": db_user,
+                     "WAREHOUSE_PASS": db_password}
             )
             result = shell_operation.run()
             
