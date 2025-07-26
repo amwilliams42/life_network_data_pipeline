@@ -37,47 +37,102 @@ pull:
 
 
 # the deployments section allows you to provide configuration for deploying flows
+# Define reusable configuration templates
+_templates:
+  # Common work pool configuration
+  default_work_pool: &default_work_pool
+    name: pipeline_workflow
+
+  # Common schedule configurations
+  five_minute_schedule: &five_minute_schedule
+    interval: 300
+
+  daily_2am_schedule: &daily_2am_schedule
+    cron: "0 2 * * *"
+
+  # State-specific configurations
+  states:
+    tn: &state_tn
+      dataset_name: traumasoft_tn
+      source_name: tn_database
+    mi: &state_mi
+      dataset_name: traumasoft_mi
+      source_name: mi_database
+    il: &state_il
+      dataset_name: traumasoft_il
+      source_name: il_database
+
+  # Common deployment templates
+  cad_import_template: &cad_import_template
+    description: Pull new and updated CAD trips every 5 minutes
+    schedule: *five_minute_schedule
+    entrypoint: flows/cad_import.py:load_cad_trips
+    work_pool: *default_work_pool
+
+  daily_import_template: &daily_import_template
+    schedule: *daily_2am_schedule
+    entrypoint: flows/daily_import.py:daily_import
+    work_pool: *default_work_pool
+
+  schedule_pull_template: &schedule_pull_template
+    schedule: *five_minute_schedule
+    entrypoint: flows/schedule_flows.py:schedule_refresh_flow
+    work_pool: *default_work_pool
+
 deployments:
-- name: Test Deployment
-  schedule:
-    cron: "*/10 * * * *"
-  entrypoint: hello_world.py:hello_world
-  parameters:
-    name: Deployment! TEST
-  work_pool:
-    name: pipeline_workflow
-    work_queue_name: pipeline_workflow
-- name: TN Pull CAD Trips
-  description: Pull new and updated CAD trips for TN and MS every 5 minutes
-  schedule:
-    interval: 300
-  parameters:
-    dataset_name: traumasoft_tn
-    source_name: tn_database
-  entrypoint: flows/cad_import.py:load_cad_trips
-  work_pool:
-    name: pipeline_workflow
-- name: TN Daily Pull
-  schedule:
-    cron: "0 2 * * *"
-  entrypoint: flows/daily_import.py:daily_import
-  parameters:
-    dataset_name: traumasoft_tn
-    source_name: tn_database
-  work_pool:
-    name: pipeline_workflow
-- name: TN Schedule Pull
-  schedule:
-    interval: 300
-  entrypoint: flows/schedule_flows.py:schedule_refresh_flow
-  parameters:
-    dataset_name: traumasoft_tn
-    source_name: tn_database
-  work_pool:
-    name: pipeline_workflow
-- name: DBT Run
-  schedule:
-    cron: "0 2 * * *"
-  entrypoint: flows/dbt.py:run_dbt
-  work_pool:
-    name: pipeline_workflow
+  # Test deployment
+  - name: Test Deployment
+    schedule:
+      cron: "*/10 * * * *"
+    entrypoint: hello_world.py:hello_world
+    parameters:
+      name: Deployment! TEST
+    work_pool: *default_work_pool
+  
+  # CAD Trips imports
+  - <<: *cad_import_template
+    name: TN Pull CAD Trips
+    description: Pull new and updated CAD trips for TN and MS every 5 minutes
+    parameters: *state_tn
+
+  - <<: *cad_import_template
+    name: MI Pull CAD Trips
+    description: Pull new and updated CAD trips for MI every 5 minutes
+    parameters: *state_mi
+
+  - <<: *cad_import_template
+    name: IL Pull CAD Trips
+    description: Pull new and updated CAD trips for IL every 5 minutes
+    parameters: *state_il
+  
+  # Daily imports
+  - <<: *daily_import_template
+    name: TN Daily Pull
+    parameters: *state_tn
+
+  - <<: *daily_import_template
+    name: MI Daily Pull
+    parameters: *state_mi
+
+  - <<: *daily_import_template
+    name: IL Daily Pull
+    parameters: *state_il
+  
+  # Schedule pulls
+  - <<: *schedule_pull_template
+    name: TN Schedule Pull
+    parameters: *state_tn
+
+  - <<: *schedule_pull_template
+    name: MI Schedule Pull
+    parameters: *state_mi
+
+  - <<: *schedule_pull_template
+    name: IL Schedule Pull
+    parameters: *state_il
+  
+  # DBT deployment
+  - name: DBT Run
+    schedule: *daily_2am_schedule
+    entrypoint: flows/dbt.py:run_dbt
+    work_pool: *default_work_pool
