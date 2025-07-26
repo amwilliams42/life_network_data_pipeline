@@ -30,8 +30,8 @@ def run_dbt():
                 commands=[command],
                 working_dir=str(dbt_path),
                 env={"DBT_PROFILES_DIR": str(dbt_path),
-                     "WAREHOUSE_USER": db_user,
-                     "WAREHOUSE_PASS": db_password}
+                     "WAREHOUSE_USER": db_user.get(),
+                     "WAREHOUSE_PASS": db_password.get()}
             )
             result = shell_operation.run()
             
