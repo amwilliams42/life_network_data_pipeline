@@ -9,4 +9,5 @@ lan_dbt:
       port: 5437
       dbname: warehouse
       threads: 8
+      schema: analytics
 
