@@ -41,9 +41,35 @@ def load_cad_trips(
         ),primary_key="id"
     )
 
+    cad_trips = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="cad_trips",
+    )
+
+    cad_trips.apply_hints(
+        incremental=dlt.sources.incremental(
+            'modified',
+            initial_value=datetime.datetime(2024,1,1,0,0,0)
+        ),primary_key="id"
+    )
+
+    qa_status = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="epcr_v2_qaqr_run_status",
+    )
+
+    qa_status.apply_hints(
+        incremental=dlt.sources.incremental(
+            'status_date',
+            initial_value=datetime.datetime(2024,1,1,0,0,0)
+        ),primary_key="id"
+    )
 
 
-    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs])
+
+
+
+    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status])
     logger.info(info)
 
 if __name__ == "__main__":
