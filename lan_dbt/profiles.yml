@@ -1,5 +1,5 @@
 lan_dbt:
-  target: prod
+  target: dev
   outputs:
     prod:
       type: postgres
@@ -10,4 +10,13 @@ lan_dbt:
       dbname: warehouse
       threads: 8
       schema: warehouse
+    dev:
+      dbname: lifedata
+      host: localhost
+      pass: devpass
+      port: 5437
+      schema: staging
+      threads: 1
+      type: postgres
+      user: user
 

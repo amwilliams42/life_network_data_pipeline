@@ -23,7 +23,8 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('sched_shifts', None, None),
     ('timesheet', 'last_updated', None),
     ('epcr_v2_qaqr_returned_reasons', None, None),
-    ('epcr_v2_qaqr_review_reasons', None, None)
+    ('epcr_v2_qaqr_review_reasons', None, None),
+    ('epcr_v2_qaqr_statuses', None, None)
 ]
 
 @task
@@ -44,7 +45,7 @@ def daily_import_pipeline(
     """
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name="daily_import",
+        pipeline_name=f"daily_import_{dataset_name}",
         destination='postgres',
         dataset_name=dataset_name,
     )

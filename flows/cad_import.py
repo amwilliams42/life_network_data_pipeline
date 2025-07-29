@@ -62,14 +62,21 @@ def load_cad_trips(
         incremental=dlt.sources.incremental(
             'status_date',
             initial_value=datetime.datetime(2024,1,1,0,0,0)
-        ),primary_key="id"
+        ),primary_key="run_id"
     )
 
+    epcr_cad_legs = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="epcr_v2_cad_legs"
+    )
 
+    patients = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="ibd_patients",
+        included_columns=["patient_id", "first_name", "last_name", "dob"]
+    )
 
-
-
-    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status])
+    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, patients])
     logger.info(info)
 
 if __name__ == "__main__":
