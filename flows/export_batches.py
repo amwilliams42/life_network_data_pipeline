@@ -62,5 +62,3 @@ if __name__ == "__main__":
     export_flow("traumasoft_tn","tn_database")
     export_flow("traumasoft_il","il_database")
     export_flow("traumasoft_mi","mi_database")
-
-

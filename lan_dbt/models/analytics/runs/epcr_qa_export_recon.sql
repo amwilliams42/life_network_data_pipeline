@@ -6,24 +6,28 @@ with {% for dataset in datasets %}
 {% set suffix=dataset.split('_')[1] %}
     {{ suffix }}_qa_export as (
         SELECT
-            run.id as run_id,
+            DISTINCT run.id as run_id,
             run.run_num,
             date(trip.trip_date) as date_of_service,
             patient.last_name || ', ' || patient.first_name as patient_name,
             patient.dob as dob,
             calltype.name || ' ' || los.name as calltype,
-            run.finalized,
+                case
+        when finalized = 1 then 'Yes'
+        else 'No' end as finalized,
             date(run.finalize_date) as finalized_date,
+                coalesce(
             qa_statuses.status_name,
+            case when finalized = 1 then 'Submitted'
+                else 'Not Finalized' end
+            ) as status_name,
             date(epcr_run_status.status_date) as qa_date,
             reviewer.last_name || ', ' || reviewer.first_name as reviewer_name,
             lead_crew.last_name|| ', ' ||lead_crew.first_name as crew_name,
-            CASE WHEN t1.run_id IS NOT NULL THEN TRUE ELSE FALSE END as exported,
-            CASE
-                WHEN t1.run_id IS NULL THEN NULL
-                WHEN t1.errors IS NULL THEN TRUE
-                ELSE FALSE
-            END as success,
+            case
+                when t1.run_id IS NOT NULL and t1.errors IS NULL then 'Exported'
+                when t1.run_id IS NOT NULL and t1.errors IS NOT NULL then 'Failed'
+                when t1.run_id IS NULL then 'Not Exported' end as exported,
             t1.errors,
             '{{ suffix }}' as source_database
         FROM

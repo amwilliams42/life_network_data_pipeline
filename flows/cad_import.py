@@ -61,7 +61,7 @@ def load_cad_trips(
     qa_status.apply_hints(
         incremental=dlt.sources.incremental(
             'status_date',
-            initial_value=datetime.datetime(2024,1,1,0,0,0)
+            initial_value=datetime.datetime(2025,6,1,0,0,0)
         ),primary_key="run_id"
     )
 
