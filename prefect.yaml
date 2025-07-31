@@ -96,6 +96,11 @@ _templates:
     entrypoint: flows/schedule_flows.py:schedule_refresh_flow
     work_pool: *default_work_pool
 
+  export_batches_template: &export_batches_template
+    schedule: *five_minute_schedule
+    entrypoint: flows/export_batches.py:export_flow
+    work_pool: *default_work_pool
+
 deployments:
   # Test deployment
   - name: Test Deployment
@@ -157,6 +162,26 @@ deployments:
     name: IL Schedule Pull
     parameters: *state_il
     tags: *il_tags
+
+  # Export batches
+  - <<: *export_batches_template
+    name: TN Export Batches
+    description: Export batches, batch results, export triggers, and EPCR runs for TN every 5 minutes
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *export_batches_template
+    name: MI Export Batches
+    description: Export batches, batch results, export triggers, and EPCR runs for MI every 5 minutes
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *export_batches_template
+    name: IL Export Batches
+    description: Export batches, batch results, export triggers, and EPCR runs for IL every 5 minutes
+    parameters: *state_il
+    tags: *il_tags
+
   
   # DBT deployment
   - name: DBT Run
