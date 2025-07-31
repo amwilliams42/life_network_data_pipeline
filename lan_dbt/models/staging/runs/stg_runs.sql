@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 {% set datasets=['traumasoft_tn', 'traumasoft_mi', 'traumasoft_il'] %}
 
