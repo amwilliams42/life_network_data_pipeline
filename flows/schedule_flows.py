@@ -29,7 +29,7 @@ def schedule_refresh(
                                             initial_value=datetime.datetime(2025, 1, 1, 0, 0, 0))
     )
 
-    info = pipeline.run(schedule_table, write_disposition="replace")
+    info = pipeline.run(schedule_table, write_disposition="merge")
     logger.info(f"Finished loading table {info}")
 
 @flow

@@ -31,13 +31,25 @@ def export_batches(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="epcr_v3_submit_batches",
     )
+    batches.apply_hints(
+        primary_key="id",
+        write_disposition="merge",
+    )
     batches_results = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="epcr_v3_submit_batches_results",
     )
+    batches_results.apply_hints(
+        primary_key="batch_id",
+        write_disposition="merge",
+    )
     export_trigger = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="epcr_v3_export_trigger_log",
+    )
+    export_trigger.apply_hints(
+        primary_key="id",
+        write_disposition="merge",
     )
     epcr_runs = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
@@ -46,7 +58,9 @@ def export_batches(
 
     epcr_runs.add_map(transform_zero_dates)
     epcr_runs.apply_hints(
-        columns={"finalize_date": {"nullable": True}}
+        columns={"finalize_date": {"nullable": True}},
+        primary_key="id",
+        write_disposition="merge",
     )
     info = pipeline.run([batches,batches_results,export_trigger, epcr_runs])
     logger.info(f"Finished loading table {info}")
