@@ -9,7 +9,7 @@ lan_dbt:
       port: 5432
       dbname: warehouse
       threads: 8
-      schema: warehouse
+      schema: staging
     dev:
       dbname: lifedata
       host: localhost
