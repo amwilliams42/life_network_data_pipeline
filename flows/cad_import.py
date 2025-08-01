@@ -26,7 +26,6 @@ def load_cad_trips(
         incremental=dlt.sources.incremental(
             "modified",
             initial_value=datetime.datetime(2025,6,1,0,0,0),
-            write_disposition="merge"
         ),primary_key="leg_id"
     )
 
@@ -39,7 +38,6 @@ def load_cad_trips(
         incremental=dlt.sources.incremental(
             'created',
             initial_value=datetime.datetime(2024,1,1,0,0,0),
-            write_disposition="merge"
         ),primary_key="id"
     )
 
@@ -52,7 +50,6 @@ def load_cad_trips(
         incremental=dlt.sources.incremental(
             'modified',
             initial_value=datetime.datetime(2024,1,1,0,0,0),
-            write_disposition="merge"
         ),primary_key="id"
     )
 
