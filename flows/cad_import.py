@@ -76,7 +76,7 @@ def load_cad_trips(
         included_columns=["patient_id", "first_name", "last_name", "dob"]
     )
 
-    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, patients], write_disposition="merge")
+    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, patients], write_disposition="merge", refresh='drop_resources')
     logger.info(info)
 
 if __name__ == "__main__":
