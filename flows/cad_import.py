@@ -70,13 +70,18 @@ def load_cad_trips(
         table="epcr_v2_cad_legs"
     )
 
+    cad_trip_leg_shift_assignments = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="cad_trip_leg_shift_assignments"
+    )
+
     patients = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="ibd_patients",
         included_columns=["patient_id", "first_name", "last_name", "dob"]
     )
 
-    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, patients], write_disposition="merge")
+    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, cad_trip_leg_shift_assignments, patients], write_disposition="merge")
     logger.info(info)
 
 if __name__ == "__main__":

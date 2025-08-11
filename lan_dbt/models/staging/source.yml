@@ -35,6 +35,7 @@ table_definitions: &common_tables
   - name: epcr_v2_runs
   - name: epcr_v2_qaqr_statuses
   - name: epcr_v3_export_trigger_log
+  - name: cad_trip_leg_shift_assignments
 
 # Source definitions using the common template
 sources:

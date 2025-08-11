@@ -15,7 +15,7 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('cad_sources', None, None),
     ('users', None, ['user_id', 'employee_num', 'employee_level', 'employee_licensure', 'username', 'job_title',
                      'job_title_id', 'first_name', 'last_name', 'preferred_first_name', 'email_address', 'user_group',
-                     'user_division', 'division', 'disabled', 'deactivated']),
+                     'user_division', 'division', 'disabled', 'deactivated','hourly_wage']),
     ('sched_units', None, None),
     ('sched_unit_certification_templates', None, None),
     ('cost_centers', None, None),
