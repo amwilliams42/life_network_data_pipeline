@@ -32,7 +32,7 @@ pull:
       stream_output: True
   - prefect.deployments.steps.run_shell_script:
       id: lsa
-      script: cat {{clone-step.directory}}/lan_dbt/dbt_project.yml
+      script: "cat {{ clone-step.directory }}/lan_dbt/dbt_project.yml"
       stream_output: True
 
 
@@ -108,7 +108,7 @@ deployments:
       cron: "*/10 * * * *"
     entrypoint: hello_world.py:hello_world
     parameters:
-      name: Deployment! TEST
+      name: "Deployment! TEST"
     work_pool: *default_work_pool
     tags: *test_tags
   
