@@ -58,3 +58,11 @@ async def run_test():
     await send_payload("test", b'test message from prefect',reply='test.inbox')
     logger.info("Sent test message")
     await listener
+
+@flow
+async def run_evidence_build():
+    logger = logging.get_run_logger()
+    listener = asyncio.create_task(listen_response("evidence.build.inbox"))
+    await send_payload("evidence.build", 'full.build',reply='evidence.build.inbox')
+    logger.info("Sent evidence build message")
+    await listener

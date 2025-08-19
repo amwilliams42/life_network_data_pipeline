@@ -46,6 +46,8 @@ _templates:
   # Common schedule configurations
   five_minute_schedule: &five_minute_schedule
     interval: 300
+  ten_minute_schedule: &ten_minute_schedule
+    interval: 600
 
   daily_2am_schedule: &daily_2am_schedule
     cron: "0 2 * * *"
@@ -194,4 +196,9 @@ deployments:
   - name: NATS Test
     schedule: *five_minute_schedule
     entrypoint: flows/messaging.py:run_test
+    work_pool: *default_work_pool
+  # Test flow for messaging to NATS
+  - name: Build Evidence
+    schedule: *ten_minute_schedule
+    entrypoint: flows/messaging.py:run_evidence_build
     work_pool: *default_work_pool
