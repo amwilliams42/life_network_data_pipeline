@@ -1,4 +1,6 @@
-import asyncio, json, os
+import asyncio
+import json
+import os
 
 from prefect import task, flow, logging
 
@@ -6,72 +8,118 @@ import nats
 
 
 @task
-async def send_payload(subject, payload):
+async def send_payload_with_response(subject, payload, timeout: float = 60.0):
+    """Send a payload and wait for a success/fail response."""
+    logger = logging.get_run_logger()
     nc = await nats.connect("nats://nats:4222")
-    # Normalize subject and payload types: subject must be str, payload must be bytes
-    if isinstance(subject, (bytes, bytearray)):
-        subject = subject.decode("utf-8")
-    if isinstance(payload, str):
-        payload = payload.encode("utf-8")
-    elif not isinstance(payload, (bytes, bytearray)):
-        # Fallback: JSON-serialize non-bytes payloads
-        payload = json.dumps(payload).encode("utf-8")
-    await nc.publish(subject, payload)
-    await nc.flush()
+    
+    try:
+        # Generate a unique inbox for the response
+        inbox = nc.new_inbox()
+        logger.info(f"Generated inbox for response: {inbox}")
+        
+        # Subscribe to the inbox before sending to avoid race conditions
+        sub = await nc.subscribe(inbox)
+        
+        # Send the message with the reply inbox
+        await nc.publish(subject, payload, reply=inbox)
+        await nc.flush()
+        logger.info(f"Sent message to {subject}, awaiting response on {inbox}")
+        
+        # Wait for response
+        try:
+            msg = await sub.next_msg(timeout=timeout)
+            response_text = msg.data.decode('utf-8', errors='replace')
+            
+            # Check if it's a success or fail message
+            response_lower = response_text.lower()
+            if 'success' in response_lower:
+                logger.info(f"SUCCESS response: {response_text}")
+            elif 'fail' in response_lower:
+                logger.info(f"FAIL response: {response_text}")
+            else:
+                logger.info(f"Response received: {response_text}")
+                
+        except asyncio.TimeoutError:
+            logger.info(f"No response received within {timeout} seconds")
+            
+        # Clean up subscription
+        await sub.unsubscribe()
+        
+    finally:
+        await nc.close()
+
+
+@task
+async def send_payload(subject, payload):
+    """Simple send without waiting for response."""
+    nc = await nats.connect("nats://nats:4222")
+    try:
+        await nc.publish(subject, payload)
+        await nc.flush()
+    finally:
+        await nc.close()
+
 
 @task
 async def listen_response(inbox, timeout: float = 60.0):
+    """Listen for responses on a specific inbox."""
     logger = logging.get_run_logger()
     nc = await nats.connect("nats://nats:4222")
-    sub = await nc.subscribe(inbox)
+    
     try:
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + timeout
-        while True:
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                logger.info(f"No success/fail response on {inbox} within {timeout:.1f}s")
-                break
-            try:
-                msg = await sub.next_msg(timeout=remaining)
-            except asyncio.TimeoutError:
-                logger.info(f"No success/fail response on {inbox} within {timeout:.1f}s")
-                break
-
-            data = msg.data
-            text = data.decode("utf-8", errors="replace") if isinstance(data, (bytes, bytearray)) else str(data)
-            lt = text.lower()
-            if "success" in lt or "fail" in lt:
-                logger.info(f"NATS response on {inbox}: {text}")
-                break
-            # Ignore non-matching messages and continue waiting until timeout
+        sub = await nc.subscribe(inbox)
+        logger.info(f"Listening for responses on {inbox}")
+        
+        try:
+            msg = await sub.next_msg(timeout=timeout)
+            response_text = msg.data.decode('utf-8', errors='replace')
+            
+            response_lower = response_text.lower()
+            if 'success' in response_lower or 'fail' in response_lower:
+                logger.info(f"NATS response on {inbox}: {response_text}")
+            else:
+                logger.info(f"Response on {inbox}: {response_text}")
+                
+        except asyncio.TimeoutError:
+            logger.info(f"No response on {inbox} within {timeout} seconds")
+            
+        await sub.unsubscribe()
+        
     finally:
-        try:
-            await sub.unsubscribe()
-        except Exception:
-            pass
-        try:
-            await nc.drain()
-        except Exception:
-            pass
-        try:
-            await nc.close()
-        except Exception:
-            pass
+        await nc.close()
+
 
 @flow
 async def run_test():
+    """Test flow that sends a message and waits for response."""
     logger = logging.get_run_logger()
-    # Start listening BEFORE sending to avoid missing a quick response
-    listener = asyncio.create_task(listen_response("test.inbox", timeout=60.0))
-    await send_payload("test", b'test message from prefect')
-    logger.info("Sent test message")
-    await listener
+    
+    # Option 1: Send and wait for response in one task
+    await send_payload_with_response("test", b'test message from prefect', timeout=30.0)
+    
+    # Option 2: Send and listen separately (if you need more control)
+    # nc = await nats.connect("nats://nats:4222")
+    # inbox = nc.new_inbox()
+    # await nc.close()
+    # 
+    # # Start listening first
+    # listener_task = asyncio.create_task(listen_response(inbox, timeout=30.0))
+    # 
+    # # Then send with reply inbox
+    # await send_payload_with_reply("test", b'test message from prefect', inbox)
+    # logger.info("Sent test message")
+    # 
+    # # Wait for response
+    # await listener_task
 
-@flow
-async def run_evidence_build():
-    logger = logging.get_run_logger()
-    listener = asyncio.create_task(listen_response("evidence.build.inbox"))
-    await send_payload("evidence.build", 'full.build',reply='evidence.build.inbox')
-    logger.info("Sent evidence build message")
-    await listener
+
+@task
+async def send_payload_with_reply(subject, payload, reply_inbox):
+    """Send payload with a specific reply inbox."""
+    nc = await nats.connect("nats://nats:4222")
+    try:
+        await nc.publish(subject, payload, reply=reply_inbox)
+        await nc.flush()
+    finally:
+        await nc.close()
