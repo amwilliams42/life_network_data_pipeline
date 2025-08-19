@@ -189,3 +189,9 @@ deployments:
     entrypoint: flows/dbt.py:run_dbt
     work_pool: *default_work_pool
     tags: *global_tags
+
+  # Test flow for messaging to NATS
+  - name: NATS Test
+    schedule: *five_minute_schedule
+    entrypoint: flows/messaging.py:run_test
+    work_pool: *default_work_pool
