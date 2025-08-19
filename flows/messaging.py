@@ -15,6 +15,4 @@ async def send_payload(subject, payload):
 
 @flow
 async def run_test():
-    logger = logging.get_run_logger()
-    result = await send_payload("test", {"msg":"test message"})
-    logger.info(result)
+    await send_payload("test", {"msg":"test message"})
