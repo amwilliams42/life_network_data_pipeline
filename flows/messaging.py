@@ -57,3 +57,4 @@ async def run_test():
     listener = asyncio.create_task(listen_response("test.inbox"))
     await send_payload("test", b'test message from prefect',reply='test.inbox')
     logger.info("Sent test message")
+    await listener
