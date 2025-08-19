@@ -6,9 +6,17 @@ import nats
 
 
 @task
-async def send_payload(subject, payload, reply=None):
+async def send_payload(subject, payload):
     nc = await nats.connect("nats://nats:4222")
-    await nc.publish(subject, payload, reply=reply)
+    # Normalize subject and payload types: subject must be str, payload must be bytes
+    if isinstance(subject, (bytes, bytearray)):
+        subject = subject.decode("utf-8")
+    if isinstance(payload, str):
+        payload = payload.encode("utf-8")
+    elif not isinstance(payload, (bytes, bytearray)):
+        # Fallback: JSON-serialize non-bytes payloads
+        payload = json.dumps(payload).encode("utf-8")
+    await nc.publish(subject, payload)
     await nc.flush()
 
 @task
@@ -31,7 +39,7 @@ async def listen_response(inbox, timeout: float = 60.0):
                 break
 
             data = msg.data
-            text = data.decode() if isinstance(data, (bytes, bytearray)) else str(data)
+            text = data.decode("utf-8", errors="replace") if isinstance(data, (bytes, bytearray)) else str(data)
             lt = text.lower()
             if "success" in lt or "fail" in lt:
                 logger.info(f"NATS response on {inbox}: {text}")
@@ -54,8 +62,9 @@ async def listen_response(inbox, timeout: float = 60.0):
 @flow
 async def run_test():
     logger = logging.get_run_logger()
-    listener = asyncio.create_task(listen_response("test.inbox"))
-    await send_payload("test", b'test message from prefect',reply='test.inbox')
+    # Start listening BEFORE sending to avoid missing a quick response
+    listener = asyncio.create_task(listen_response("test.inbox", timeout=60.0))
+    await send_payload("test", b'test message from prefect')
     logger.info("Sent test message")
     await listener
 
