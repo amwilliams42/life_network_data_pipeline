@@ -113,7 +113,7 @@ def load_cad_trips(
                          cancel_reasons,
                          lost_call_reasons,
                          cad_trip_history_log
-                         ], write_disposition="merge")
+                         ], write_disposition="replace")
     logger.info(info)
 
 if __name__ == "__main__":
