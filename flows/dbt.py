@@ -5,7 +5,7 @@ from prefect_shell import ShellOperation
 from prefect.blocks.system import Secret
 
 # Extract constants for better maintainability
-DBT_COMMANDS = ["dbt deps --target prod", "dbt build --target prod"]
+DBT_COMMANDS = ["dbt deps", "dbt build --target prod"]
 DEFAULT_DBT_DIR = "./lan_dbt"
 
 @flow(name="dbt-flow", log_prints=True)
