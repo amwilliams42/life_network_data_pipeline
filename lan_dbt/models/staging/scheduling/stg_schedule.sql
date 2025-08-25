@@ -62,7 +62,7 @@ with {% for dataset in datasets %}
             stsa.shift_id,
             stsa.published,
             stsa.status as shift_status,
-            stsa.sched2025-07-23 11:24:00.000000 +00:00ule_type,
+            stsa.schedule_type,
             stsa.comments,
             stsa.earning_code_id,
             
