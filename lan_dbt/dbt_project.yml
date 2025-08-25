@@ -35,3 +35,12 @@ models:
     analytics:
       +materialized: view
       +schema: analytics
+
+seeds:
+  lan_dbt:
+    pay_periods:
+      +column_types:
+        pay_period_year: integer
+        pay_period_number: integer
+        start_date: date
+        end_date: date

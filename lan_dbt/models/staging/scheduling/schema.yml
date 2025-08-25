@@ -50,36 +50,100 @@ models:
       - name: source_database
         description: "Source database (tn, mi, il)"
 
-  - name: schedule
+  - name: stg_schedule
     description: "Staged schedule data from Traumasoft TN, MI, and IL"
     columns:
-      - name: id
-        description: "The primary key for this table"
+      - name: assignment_id
+        description: "The primary key for schedule assignments"
         tests:
           - not_null
-      - name: shift_qualification
-        description: "Qualification required for the shift"
-      - name: name
-        description: "Name of the person assigned to the shift, or 'OPEN' if unassigned"
+      - name: user_id
+        description: "ID of the user assigned to the shift"
+      - name: source_database
+        description: "Source database (tn, mi, il)"
+        tests:
+          - not_null
       - name: date_line
         description: "Date of the shift"
-      - name: shift_name
-        description: "Name of the shift"
-      - name: cost_center_id
-        description: "ID of the cost center"
-      - name: cost_center_name
-        description: "Name of the cost center"
-      - name: shift_cc
-        description: "Cost center of the shift"
+        tests:
+          - not_null
       - name: shift_start
         description: "Start time of the shift"
       - name: shift_end
         description: "End time of the shift"
-      - name: scheduled_length
+      - name: scheduled_hours
         description: "Length of the shift in hours"
+      - name: first_name
+        description: "First name of assigned employee"
+      - name: last_name
+        description: "Last name of assigned employee"
+      - name: employee_num
+        description: "Employee number of assigned person"
+      - name: job_title
+        description: "Job title of assigned person"
+      - name: assigned_name
+        description: "Full name of assigned person or 'OPEN' if unassigned"
+      - name: assignment_status
+        description: "Status of assignment: 'ASSIGNED' or 'OPEN'"
       - name: open_hours
         description: "Number of open hours if shift is unassigned, 0 otherwise"
-      - name: worked
-        description: "Number of hours worked"
-      - name: source_database
-        description: "Source database (tn, mi, il)"
+      - name: unit_id
+        description: "ID of the unit/shift"
+      - name: unit_name
+        description: "Name of the unit/shift"
+      - name: position_slot
+        description: "Position slot within the unit"
+      - name: required_qualification
+        description: "Required certification/qualification for the position"
+      - name: min_licensure_id
+        description: "Minimum licensure ID required"
+      - name: min_level_id
+        description: "Minimum level ID required"
+      - name: cost_center_id
+        description: "ID of the cost center"
+      - name: cost_center_name
+        description: "Name of the cost center"
+      - name: cost_center_short
+        description: "Short name of the cost center"
+      - name: shift_id
+        description: "ID of the shift template"
+      - name: published
+        description: "Whether the shift is published"
+      - name: shift_status
+        description: "Status of the shift"
+      - name: schedule_type
+        description: "Type of schedule"
+      - name: comments
+        description: "Comments on the shift"
+      - name: earning_code_id
+        description: "Earning code ID for the shift"
+      - name: pay_period_year
+        description: "Year of the pay period"
+      - name: pay_period_number
+        description: "Number of the pay period within the year"
+      - name: pay_period_start
+        description: "Start date of the pay period"
+      - name: pay_period_end
+        description: "End date of the pay period"
+      - name: is_today
+        description: "Boolean flag indicating if shift is today"
+      - name: is_future
+        description: "Boolean flag indicating if shift is in the future"
+      - name: is_today_or_future
+        description: "Boolean flag indicating if shift is today or in the future"
+      - name: days_from_today
+        description: "Number of days from today (negative for past dates)"
+      - name: is_current_pay_period
+        description: "Boolean flag indicating if shift is in current pay period"
+      - name: is_next_pay_period
+        description: "Boolean flag indicating if shift is in next pay period"
+      - name: day_of_week
+        description: "Day of week number (0=Sunday, 1=Monday, etc.)"
+      - name: day_name
+        description: "Name of the day of the week"
+      - name: week_start
+        description: "Start date of the week containing this shift"
+      - name: month_start
+        description: "Start date of the month containing this shift"
+      - name: record_created_at
+        description: "Timestamp when this record was created"

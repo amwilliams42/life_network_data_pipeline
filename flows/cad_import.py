@@ -81,7 +81,39 @@ def load_cad_trips(
         included_columns=["patient_id", "first_name", "last_name", "dob"]
     )
 
-    info = pipeline.run([cad_trip_legs_rev, cad_trip_legs, cad_trips, qa_status, epcr_cad_legs, cad_trip_leg_shift_assignments, patients], write_disposition="merge")
+    cancel_reasons = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table='cad_trip_cancel_reason',
+    )
+
+    lost_call_reasons = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table='cad_lost_call_status',
+    )
+
+    cad_trip_history_log = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table='cad_trip_history_log',
+    )
+
+    cad_trip_history_log.apply_hints(
+        incremental=dlt.sources.incremental(
+            'timestamp',
+            initial_value=datetime.datetime(2025,6,1,0,0,0)
+        ),primary_key="id"
+    )
+
+    info = pipeline.run([cad_trip_legs_rev,
+                         cad_trip_legs,
+                         cad_trips,
+                         qa_status,
+                         epcr_cad_legs,
+                         cad_trip_leg_shift_assignments,
+                         patients,
+                         cancel_reasons,
+                         lost_call_reasons,
+                         cad_trip_history_log
+                         ], write_disposition="merge")
     logger.info(info)
 
 if __name__ == "__main__":
