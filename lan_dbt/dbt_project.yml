@@ -35,6 +35,9 @@ models:
     analytics:
       +materialized: view
       +schema: analytics
+    intermediate:
+      +materialized: view
+      +schema: intermediate
 
 seeds:
   lan_dbt:
