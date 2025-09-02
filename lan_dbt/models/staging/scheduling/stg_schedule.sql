@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='view') }}
 
 {% set datasets=['traumasoft_tn', 'traumasoft_mi', 'traumasoft_il'] %}
 
@@ -22,14 +22,11 @@ with {% for dataset in datasets %}
             users.last_name,
             users.employee_num,
             users.job_title,
-            COALESCE(
                 CASE
                     WHEN users.last_name IS NOT NULL AND users.first_name IS NOT NULL THEN
                         CONCAT(users.last_name, ', ', users.first_name)
                     ELSE NULL
-                END,
-                'OPEN'
-            ) as assigned_name,
+                END as assigned_name,
 
             -- Assignment status
             CASE

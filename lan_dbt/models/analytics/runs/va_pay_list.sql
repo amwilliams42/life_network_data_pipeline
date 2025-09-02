@@ -21,6 +21,5 @@ SELECT
              stg.source_database = 'tn'
            AND stg.source_id IN (12,13)
            AND stg.last_status_id >= -1
-           AND users.hourly_wage < 19.36
          ORDER BY
              1
