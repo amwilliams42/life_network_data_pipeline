@@ -15,7 +15,10 @@ with {% for dataset in datasets %}
             stsa.date_line,
             stsa.start_time as shift_start,
             stsa.end_time as shift_end,
-            (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600 as scheduled_hours,
+            CASE
+                WHEN users.user_id IS NOT NULL THEN (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600
+                ELSE 0
+            END as scheduled_hours,
 
             -- Employee information
             users.first_name,

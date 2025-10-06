@@ -65,11 +65,10 @@ def daily_import_pipeline(
                     initial_value=datetime.datetime(2025,1,1,0,0,0)
                 )
             )
-
         table_sources.append(table_source)
         logger.info(f"Configured table: {table_name}")
 
-    info = pipeline.run(table_sources, write_disposition="merge")
+    info = pipeline.run(table_sources, write_disposition="replace")
     logger.info(f"Finished loading table {info}")
 
 @flow

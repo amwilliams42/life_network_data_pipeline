@@ -25,12 +25,7 @@ def schedule_refresh(
         table="sched_template_shift_assignments",
     )
 
-    schedule_table.apply_hints(
-        incremental=dlt.sources.incremental(
-            'modified',
-            initial_value=datetime.datetime(2024,1,1,0,0,0),
-        ),primary_key="id"
-    )
+    schedule_table.apply_hints(primary_key="id")
 
 
     info = pipeline.run(schedule_table, write_disposition="replace")
