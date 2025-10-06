@@ -23,13 +23,17 @@ def schedule_refresh(
     schedule_table = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="sched_template_shift_assignments",
-        write_disposition="merge",
-        primary_key="id",
-        incremental=dlt.sources.incremental("draft_modified",
-                                            initial_value=datetime.datetime(2025, 1, 1, 0, 0, 0))
     )
 
-    info = pipeline.run(schedule_table, write_disposition="merge")
+    schedule_table.apply_hints(
+        incremental=dlt.sources.incremental(
+            'modified',
+            initial_value=datetime.datetime(2024,1,1,0,0,0),
+        ),primary_key="id"
+    )
+
+
+    info = pipeline.run(schedule_table, write_disposition="replace")
     logger.info(f"Finished loading table {info}")
 
 @flow

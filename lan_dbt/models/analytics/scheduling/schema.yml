@@ -3,3 +3,5 @@ version: 2
 models:
   - name: shift_assignments
     description: "Shift assigments"
+  - name: sched_hours
+    description: "Aggregated hours by date and cost center across all markets with cross join to ensure every cost center has an entry for every date"
