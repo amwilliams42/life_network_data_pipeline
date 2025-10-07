@@ -48,7 +48,12 @@ _templates:
     interval: 300
   ten_minute_schedule: &ten_minute_schedule
     interval: 600
-
+  thirty_minute_schedule: &thirty_minute_schedule
+    interval: 1800
+  one_hour_schedule: &one_hour_schedule
+    interval: 3600
+  daily_schedule: &daily_schedule
+    interval: 86400
   daily_2am_schedule: &daily_2am_schedule
     cron: "0 2 * * *"
 
@@ -83,8 +88,8 @@ _templates:
 
   # Common deployment templates
   cad_import_template: &cad_import_template
-    description: Pull new and updated CAD trips every 5 minutes
-    schedule: *five_minute_schedule
+    description: Pull new and updated CAD trips every 30 minutes
+    schedule: *thirty_minute_schedule
     entrypoint: flows/cad_import.py:load_cad_trips
     work_pool: *default_work_pool
 
@@ -94,13 +99,9 @@ _templates:
     work_pool: *default_work_pool
 
   schedule_pull_template: &schedule_pull_template
-    schedule: *five_minute_schedule
+    description: Pull Schedule and Timesheet changes every hour
+    schedule: *one_hour_schedule
     entrypoint: flows/schedule_flows.py:schedule_refresh_flow
-    work_pool: *default_work_pool
-
-  export_batches_template: &export_batches_template
-    schedule: *five_minute_schedule
-    entrypoint: flows/export_batches.py:export_flow
     work_pool: *default_work_pool
 
 deployments:
@@ -165,29 +166,10 @@ deployments:
     parameters: *state_il
     tags: *il_tags
 
-  # Export batches
-  - <<: *export_batches_template
-    name: TN Export Batches
-    description: Export batches, batch results, export triggers, and EPCR runs for TN every 5 minutes
-    parameters: *state_tn
-    tags: *tn_tags
-
-  - <<: *export_batches_template
-    name: MI Export Batches
-    description: Export batches, batch results, export triggers, and EPCR runs for MI every 5 minutes
-    parameters: *state_mi
-    tags: *mi_tags
-
-  - <<: *export_batches_template
-    name: IL Export Batches
-    description: Export batches, batch results, export triggers, and EPCR runs for IL every 5 minutes
-    parameters: *state_il
-    tags: *il_tags
-
   
   # DBT deployment
   - name: DBT Run
-    schedule: *daily_2am_schedule
+    schedule: *one_hour_schedule
     entrypoint: flows/dbt.py:run_dbt
     work_pool: *default_work_pool
     tags: *global_tags
@@ -199,6 +181,6 @@ deployments:
     work_pool: *default_work_pool
   # Test flow for messaging to NATS
   - name: Build Evidence
-    schedule: *ten_minute_schedule
+    schedule: *one_hour_schedule
     entrypoint: flows/messaging.py:run_evidence_build
     work_pool: *default_work_pool

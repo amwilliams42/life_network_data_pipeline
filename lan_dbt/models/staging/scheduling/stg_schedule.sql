@@ -99,7 +99,10 @@ with
             END as is_training,
 
             -- actual time worked in hours
-            EXTRACT(EPOCH FROM (ts.time_end - ts.time_start)) / 3600 AS hours_difference,
+            case
+                when  EXTRACT(EPOCH FROM (ts.time_end - ts.time_start))/3600 < 0 then (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600
+                else EXTRACT(EPOCH FROM (ts.time_end - ts.time_start))/3600
+            end as hours_difference,
             
             -- Pay period flags for easy filtering
             CASE 
