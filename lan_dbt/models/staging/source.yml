@@ -38,6 +38,7 @@ table_definitions: &common_tables
   - name: cad_trip_leg_shift_assignments
   - name: cad_trip_cancel_reason
   - name: cad_trip_history_log
+  - name: sched_earning_codes
 
 # Source definitions using the common template
 sources:

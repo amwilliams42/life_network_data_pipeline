@@ -2,7 +2,12 @@
 
 {% set datasets=['traumasoft_tn', 'traumasoft_mi', 'traumasoft_il'] %}
 
-with {% for dataset in datasets %}
+with
+    stg_timesheet_data as (
+        select * from {{ ref('stg_timesheet') }}
+    ),
+
+    {% for dataset in datasets %}
 {% set suffix=dataset.split('_')[1] %}
     {{ suffix }}_schedule as (
         select
@@ -79,11 +84,22 @@ with {% for dataset in datasets %}
             stsa.date_line - CURRENT_DATE as days_from_today,
 
             -- Timesheet information
-            TO_TIMESTAMP(ts.time_start_ts) as clock_in_time,
-            TO_TIMESTAMP(ts.time_end_ts) as clock_out_time,
+            ts.time_start as clock_in_time,
+            ts.time_end as clock_out_time,
+
+            -- Is training?
+
+            CASE
+                WHEN uct.template_name = 'Third Party' THEN true
+                WHEN unit.name = 'Memphis - Orientation' THEN true
+                WHEN unit.name = 'Nash - Orientation' THEN true
+                WHEN unit.name like '%Orientation%' THEN true
+                WHEN uct.template_name like '%FTO%' THEN true
+                ELSE false
+            END as is_training,
 
             -- actual time worked in hours
-            EXTRACT(EPOCH FROM (to_timestamp(ts.time_end_ts) - to_timestamp(ts.time_start_ts))) / 3600 AS hours_difference,
+            EXTRACT(EPOCH FROM (ts.time_end - ts.time_start)) / 3600 AS hours_difference,
             
             -- Pay period flags for easy filtering
             CASE 
@@ -107,7 +123,9 @@ with {% for dataset in datasets %}
             DATE_TRUNC('month', stsa.date_line)::date as month_start,
             
             -- Current timestamp for tracking
-            CURRENT_TIMESTAMP as record_created_at
+            CURRENT_TIMESTAMP as record_created_at,
+
+            ec.description
 
         from {{ source(dataset,'sched_template_shift_assignments') }} as stsa
         left join {{ source(dataset,'users') }} as users 
@@ -121,12 +139,15 @@ with {% for dataset in datasets %}
         left join {{ source(dataset,'cost_centers') }} as cc 
             on cc.id = stsa.cost_center_id
         left join {{ ref('pay_periods') }} as pp
-            on stsa.date_line >= pp.start_date 
+            on stsa.date_line >= pp.start_date
             and stsa.date_line <= pp.end_date
-        left join {{ source(dataset, 'timesheet') }} as ts
-            on ts.shift_assignment_id = stsa.id
+        left join stg_timesheet_data as ts
+            on ts.assignment_id = stsa.id
+            and ts.source_database = '{{ suffix }}'
+        left join {{ source(dataset, 'sched_earning_codes') }} as ec
+                on ec.id = stsa.earning_code_id
         where stsa.deleted = '0' 
-          and stsa.earning_code_id = 1
+          and (stsa.earning_code_id = 1 or ec.description like '%Regular%')
           and stsa.date_line >= CURRENT_DATE - INTERVAL '30 days'  -- Keep recent history and future
     ){% if not loop.last %},{% endif %}
 {% endfor %}

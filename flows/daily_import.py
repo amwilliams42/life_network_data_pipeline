@@ -24,7 +24,8 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('timesheet', None, None),
     ('epcr_v2_qaqr_returned_reasons', None, None),
     ('epcr_v2_qaqr_review_reasons', None, None),
-    ('epcr_v2_qaqr_statuses', None, None)
+    ('epcr_v2_qaqr_statuses', None, None),
+    ('sched_earning_codes', None, None)
 ]
 
 @task

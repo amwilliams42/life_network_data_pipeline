@@ -9,6 +9,7 @@ services:
       - "5437:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    shm_size: 1gb
 
 volumes:
   db_data:

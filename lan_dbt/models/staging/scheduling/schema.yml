@@ -147,3 +147,31 @@ models:
         description: "Start date of the month containing this shift"
       - name: record_created_at
         description: "Timestamp when this record was created"
+
+  - name: stg_timesheet
+    description: "Staged timesheet data from Traumasoft TN, MI, and IL with both shift-based and orphaned timesheet entries"
+    columns:
+      - name: source_database
+        description: "Source database (tn, mi, il)"
+      - name: assignment_id
+        description: "Schedule assignment ID"
+      - name: start_time
+        description: "Scheduled start time"
+      - name: end_time
+        description: "Scheduled end time"
+      - name: date_line
+        description: "Date of the shift"
+      - name: username
+        description: "Username of the employee"
+      - name: cost_center_id
+        description: "Cost center ID"
+      - name: time_id
+        description: "Timesheet entry ID"
+      - name: time_start
+        description: "Actual clock-in time (timestamp)"
+      - name: time_end
+        description: "Actual clock-out time (timestamp)"
+      - name: time_start_ts
+        description: "Actual clock-in time (epoch seconds)"
+      - name: time_end_ts
+        description: "Actual clock-out time (epoch seconds)"
