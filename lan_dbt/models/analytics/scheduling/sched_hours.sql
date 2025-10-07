@@ -90,7 +90,7 @@ SELECT
     ah.is_training,
     COALESCE(ah.scheduled_hours, 0) AS scheduled_hours,
     COALESCE(ah.open_hours, 0) AS open_hours,
-    COALESCE(ah.worked_hours, 0) AS worked_hours
+    GREATEST(COALESCE(ah.worked_hours, 0),0) AS worked_hours
 FROM date_cost_center_combinations dcc
 LEFT JOIN actual_hours ah
     ON dcc.date_line = ah.date_line
