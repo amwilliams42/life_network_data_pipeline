@@ -1,11 +1,12 @@
 from prefect import flow
-import datetime
+import time
 from typing import Sequence, Tuple, Optional, List
 
 import dlt
 from dlt.sources.sql_database import sql_database, sql_table, Table, remove_nullability_adapter
 from prefect import flow, task
 from prefect.logging import get_run_logger
+
 
 @task
 def schedule_refresh(
@@ -15,7 +16,7 @@ def schedule_refresh(
 
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name=f"sched_template_{dataset_name}",
+        pipeline_name=f"sched_template_{dataset_name}_{int(time.time())}",
         destination='postgres',
         dataset_name=dataset_name,
     )
@@ -24,11 +25,18 @@ def schedule_refresh(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="sched_template_shift_assignments",
     )
-
     schedule_table.apply_hints(primary_key="id")
 
+    timesheet_table = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="timesheet",
+    )
+    timesheet_table.apply_hints(primary_key="time_id")
 
-    info = pipeline.run(schedule_table, write_disposition="replace")
+    # Remove the diagnostic logging that consumes the iterators
+    logger.info("Starting pipeline run with schedule and timesheet tables...")
+
+    info = pipeline.run([schedule_table, timesheet_table], write_disposition="replace", refresh='drop_data')
     logger.info(f"Finished loading table {info}")
 
 @flow

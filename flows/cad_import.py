@@ -2,8 +2,56 @@ import datetime
 import dlt
 from dlt.sources.sql_database import sql_database, sql_table, Table
 from prefect import flow, task
+from prefect import flow, task
 from prefect.logging import get_run_logger
 
+
+@task
+def schedule_refresh(
+        dataset_name: str,
+        source_name: str
+) -> None:
+
+    logger = get_run_logger()
+    pipeline = dlt.pipeline(
+        pipeline_name=f"sched_template_{dataset_name}",
+        destination='postgres',
+        dataset_name=dataset_name,
+    )
+
+    schedule_table = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="sched_template_shift_assignments",
+    )
+    schedule_table.apply_hints(primary_key="id")
+
+    timesheet_table = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="timesheet",
+    )
+    timesheet_table.apply_hints(primary_key="time_id")
+
+    # Add diagnostic logging to check if tables have data
+    logger.info("Checking data before pipeline run...")
+    
+    # Try to get a count of records
+    try:
+        schedule_data = list(schedule_table)
+        timesheet_data = list(timesheet_table)
+        
+        logger.info(f"Schedule table records found: {len(schedule_data)}")
+        logger.info(f"Timesheet table records found: {len(timesheet_data)}")
+        
+        if len(schedule_data) == 0:
+            logger.warning("Schedule table is empty!")
+        if len(timesheet_data) == 0:
+            logger.warning("Timesheet table is empty!")
+            
+    except Exception as e:
+        logger.error(f"Error checking table data: {e}")
+
+    info = pipeline.run([schedule_table,timesheet_table], write_disposition="replace")
+    logger.info(f"Finished loading table {info}")
 
 @flow
 def load_cad_trips(
