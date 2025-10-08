@@ -175,11 +175,6 @@ deployments:
     tags: *global_tags
 
   # Test flow for messaging to NATS
-  - name: NATS Test
-    schedule: *five_minute_schedule
-    entrypoint: flows/messaging.py:run_test
-    work_pool: *default_work_pool
-  # Test flow for messaging to NATS
   - name: Build Evidence
     schedule: *one_hour_schedule
     entrypoint: flows/messaging.py:run_evidence_build
