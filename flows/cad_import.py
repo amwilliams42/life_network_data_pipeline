@@ -85,7 +85,7 @@ def load_cad_trips(
     cad_trip_legs.apply_hints(
         incremental=dlt.sources.incremental(
             'created',
-            initial_value=datetime.datetime(2024,1,1,0,0,0),
+            initial_value=datetime.datetime(2025,6,1,0,0,0),
         ),primary_key="id"
     )
 
@@ -97,7 +97,7 @@ def load_cad_trips(
     cad_trips.apply_hints(
         incremental=dlt.sources.incremental(
             'modified',
-            initial_value=datetime.datetime(2024,1,1,0,0,0),
+            initial_value=datetime.datetime(2025,6,1,0,0,0),
         ),primary_key="id"
     )
 
