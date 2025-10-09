@@ -36,7 +36,7 @@ def schedule_refresh(
     # Remove the diagnostic logging that consumes the iterators
     logger.info("Starting pipeline run with schedule and timesheet tables...")
 
-    info = pipeline.run([schedule_table, timesheet_table], write_disposition="replace", refresh='drop_data')
+    info = pipeline.run([schedule_table, timesheet_table], write_disposition="replace")
     logger.info(f"Finished loading table {info}")
 
 @flow
