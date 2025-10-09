@@ -4,10 +4,7 @@
 
 with
     stg_timesheet_data as (
-        select distinct on (assignment_id, source_database)
-            *
-        from {{ ref('stg_timesheet') }}
-        order by assignment_id, source_database, time_start desc
+        select * from {{ ref('stg_timesheet') }}
     ),
 
     {% for dataset in datasets %}
