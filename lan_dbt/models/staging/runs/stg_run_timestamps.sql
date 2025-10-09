@@ -36,6 +36,7 @@ with {% for dataset in datasets %}
             
             -- Additional Status Times
             rev.last_status_timestamp,
+            rev.requested_pickup_time as requested_time,
             rev.atpatientbs_time as at_patient_bedside_time,
             
             -- Record Management Times
