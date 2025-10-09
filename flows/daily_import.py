@@ -21,10 +21,6 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('cost_centers', None, None),
     ('sched_unit_personnel', None, None),
     ('sched_shifts', None, None),
-    ('timesheet', None, None),
-    ('epcr_v2_qaqr_returned_reasons', None, None),
-    ('epcr_v2_qaqr_review_reasons', None, None),
-    ('epcr_v2_qaqr_statuses', None, None),
     ('sched_earning_codes', None, None)
 ]
 
