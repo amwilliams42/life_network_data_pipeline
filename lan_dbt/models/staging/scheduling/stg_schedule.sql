@@ -12,6 +12,16 @@ with
 
     {% for dataset in datasets %}
 {% set suffix=dataset.split('_')[1] %}
+    {{ suffix }}_unit_personnel_dedup as (
+        select distinct on (unit_id, slot)
+            *
+        from {{ source(dataset,'sched_unit_personnel') }}
+        order by unit_id, slot, id desc
+    ),
+{% endfor %}
+
+    {% for dataset in datasets %}
+{% set suffix=dataset.split('_')[1] %}
     {{ suffix }}_schedule as (
         select
             -- Primary identifiers
@@ -134,11 +144,11 @@ with
             ec.description
 
         from {{ source(dataset,'sched_template_shift_assignments') }} as stsa
-        left join {{ source(dataset,'users') }} as users 
+        left join {{ source(dataset,'users') }} as users
             on users.user_id = stsa.user_id
-        left join {{ source(dataset,'sched_units') }} as unit 
+        left join {{ source(dataset,'sched_units') }} as unit
             on unit.id = stsa.unit_id
-        left join {{ source(dataset,'sched_unit_personnel') }} as sup 
+        left join {{ suffix }}_unit_personnel_dedup as sup
             on sup.unit_id = stsa.unit_id and sup.slot = stsa.slot
         left join {{ source(dataset,'sched_unit_certification_templates') }} as uct 
             on uct.id = sup.certification_template_id
