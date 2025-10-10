@@ -161,7 +161,7 @@ def load_cad_trips(
                          cancel_reasons,
                          lost_call_reasons,
                          cad_trip_history_log
-                         ], write_disposition="replace")
+                         ], write_disposition="replace", refresh='drop_data')
     logger.info(info)
 
 if __name__ == "__main__":
