@@ -1,4 +1,6 @@
 import datetime
+import time
+
 import dlt
 from dlt.sources.sql_database import sql_database, sql_table, Table
 from prefect import flow, task
@@ -60,58 +62,41 @@ def load_cad_trips(
 ) -> None:
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name=f"load_cad_trips_{dataset_name}",
+        pipeline_name=f"load_cad_trips_{dataset_name}_{int(time.time())}",
         destination='postgres',
         dataset_name=dataset_name,
     )
+    def filter_by_date(query, table):
+        if table.name == "cad_trip_legs_rev":
+            # Only select rows where the column customer_id has value 1
+            return query.where(table.c.leg_date > '2025-01-01')
+        # Use the original query for other tables
+        if table.name == "cad_trip_legs":
+            return query.where(table.c.created > '2025-01-01')
+        if table.name == "cad_trips":
+            return query.where(table.c.created > '2025-01-01')
+        if table.name == "cad_trip_history_log":
+            return query.where(table.c.timestamp > '2025-01-01')
+        return query
+
 
     cad_trip_legs_rev = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_legs_rev",
-    )
-
-    cad_trip_legs_rev.apply_hints(
-        incremental=dlt.sources.incremental(
-            "modified",
-            initial_value=datetime.datetime(2025,6,1,0,0,0),
-        ),primary_key="leg_id"
-    )
+        query_adapter_callback = filter_by_date,
+    ).apply_hints(primary_key="leg_id")
 
     cad_trip_legs = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_legs",
-    )
-
-    cad_trip_legs.apply_hints(
-        incremental=dlt.sources.incremental(
-            'created',
-            initial_value=datetime.datetime(2025,6,1,0,0,0),
-        ),primary_key="id"
-    )
+        query_adapter_callback = filter_by_date,
+    ).apply_hints(primary_key="id")
 
     cad_trips = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trips",
-    )
+    ).apply_hints(primary_key="id")
 
-    cad_trips.apply_hints(
-        incremental=dlt.sources.incremental(
-            'modified',
-            initial_value=datetime.datetime(2025,6,1,0,0,0),
-        ),primary_key="id"
-    )
-
-    qa_status = sql_table(
-        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
-        table="epcr_v2_qaqr_run_status",
-    )
-
-    qa_status.apply_hints(
-        incremental=dlt.sources.incremental(
-            'status_date',
-            initial_value=datetime.datetime(2025,6,1,0,0,0)
-        ),primary_key="run_id"
-    )
 
     epcr_cad_legs = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
@@ -142,26 +127,18 @@ def load_cad_trips(
     cad_trip_history_log = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table='cad_trip_history_log',
-    )
-
-    cad_trip_history_log.apply_hints(
-        incremental=dlt.sources.incremental(
-            'timestamp',
-            initial_value=datetime.datetime(2025,6,1,0,0,0)
-        ),primary_key="id"
-    )
+    ).apply_hints(primary_key="id")
 
     info = pipeline.run([cad_trip_legs_rev,
                          cad_trip_legs,
                          cad_trips,
-                         qa_status,
                          epcr_cad_legs,
                          cad_trip_leg_shift_assignments,
                          patients,
                          cancel_reasons,
                          lost_call_reasons,
                          cad_trip_history_log
-                         ], write_disposition="replace", refresh='drop_data')
+                         ], write_disposition="replace")
     logger.info(info)
 
 if __name__ == "__main__":
