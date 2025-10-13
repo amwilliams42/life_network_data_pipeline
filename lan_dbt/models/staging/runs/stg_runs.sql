@@ -25,7 +25,7 @@ with {% for dataset in datasets %}
         rev.modified as modified_timestamp
 FROM
     {{ source(dataset, 'cad_trip_legs') }} as leg
-    INNER JOIN {{ source(dataset, 'cad_trip_legs_rev') }} as rev
+    FULL JOIN {{ source(dataset, 'cad_trip_legs_rev') }} as rev
         on leg.id = rev.leg_id AND leg.rev = rev.rev
     left join {{ source(dataset, 'epcr_v2_cad_legs') }} as epcr_legs on epcr_legs.cad_leg_id = leg.id
     left join {{ source(dataset, 'epcr_v2_runs') }} as runs on epcr_legs.run_id = runs.id
