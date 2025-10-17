@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 /*
     Drill-down view for analyzing individual runs within a specific shift.

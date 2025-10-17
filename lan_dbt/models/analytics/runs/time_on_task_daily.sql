@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 with
     run_metrics as (
@@ -12,9 +12,10 @@ with
     ),
 
     -- Daily run aggregations (with region splitting for TN)
+    -- Group by shift_date to align runs with their shift's scheduled hours
     daily_runs as (
         select
-            service_date,
+            shift_date,
             source_database,
             region,
 
@@ -40,7 +41,7 @@ with
             sum(destination_time_hours) as total_destination_time_hours
 
         from run_metrics
-        group by service_date, source_database, region
+        group by shift_date, source_database, region
     ),
 
     -- Daily worked hours (aggregate from sched_hours, excluding training and special events)
@@ -60,17 +61,18 @@ with
             end as region,
 
             -- Total worked hours for the day (exclude training and special events)
+            -- Divide by 2 to get unit-hours instead of crew-member-hours (assumes 2-person crews)
             sum(case
                 when special_event = false and (is_training = false or is_training is null)
                 then worked_hours
                 else 0
-            end) as total_scheduled_hours,
+            end) / 2.0 as total_scheduled_hours,
 
             sum(case
                 when special_event = false and (is_training = false or is_training is null)
                 then worked_hours
                 else 0
-            end) as total_scheduled_hours_excl_training,
+            end) / 2.0 as total_scheduled_hours_excl_training,
 
             -- Total shifts (count of cost centers with hours, excluding training/events)
             count(distinct case
@@ -93,7 +95,7 @@ with
     -- Combine run and schedule data
     daily_combined as (
         select
-            coalesce(r.service_date, s.service_date) as service_date,
+            coalesce(r.shift_date, s.service_date) as service_date,
             coalesce(r.source_database, s.source_database) as source_database,
             coalesce(r.region, s.region) as region,
 
@@ -125,12 +127,20 @@ with
 
         from daily_runs as r
         full outer join daily_scheduled as s
-            on r.service_date = s.service_date
+            on r.shift_date = s.service_date
             and r.source_database = s.source_database
             and r.region = s.region
     ),
 
     -- Calculate percentages and moving averages
+    -- Filter to recent data before expensive window functions
+    daily_combined_filtered as (
+        select *
+        from daily_combined
+        where service_date >= current_date - interval '5 weeks'
+        and service_date < current_date + interval '1 day'
+    ),
+
     daily_metrics as (
         select
             *,
@@ -212,7 +222,7 @@ with
             date_trunc('week', service_date)::date as week_start,
             date_trunc('month', service_date)::date as month_start
 
-        from daily_combined
+        from daily_combined_filtered
     )
 
 select * from daily_metrics

@@ -1,10 +1,12 @@
 {{ config(materialized='view') }}
 
 WITH
-    -- Get all distinct dates from the schedule
+    -- Get all distinct dates from the schedule (limited to last 5 weeks for performance)
     all_dates AS (
         SELECT DISTINCT date_line
         FROM {{ ref('stg_schedule') }}
+        WHERE date_line >= current_date - interval '5 weeks'
+        AND date_line < current_date + interval '1 day'
     ),
 
     -- Define specific cost centers to include
