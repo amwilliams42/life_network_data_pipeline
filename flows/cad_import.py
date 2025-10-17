@@ -89,7 +89,6 @@ def load_cad_trips(
     cad_trip_legs = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_legs",
-        query_adapter_callback = filter_by_date,
     ).apply_hints(primary_key="id")
 
     cad_trips = sql_table(
