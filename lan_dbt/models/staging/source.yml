@@ -39,6 +39,7 @@ table_definitions: &common_tables
   - name: cad_trip_cancel_reason
   - name: cad_trip_history_log
   - name: sched_earning_codes
+  - name: cad_reasons_for_transport
 
 # Source definitions using the common template
 sources:

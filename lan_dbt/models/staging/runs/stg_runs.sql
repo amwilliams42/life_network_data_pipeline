@@ -22,7 +22,8 @@ with {% for dataset in datasets %}
         rev.last_status_id,
         '{{ suffix }}' as source_database,
         leg.created as created_timestamp,
-        rev.modified as modified_timestamp
+        rev.modified as modified_timestamp,
+        rft.name as reason_for_transport
 FROM
     {{ source(dataset, 'cad_trip_legs') }} as leg
     FULL JOIN {{ source(dataset, 'cad_trip_legs_rev') }} as rev
@@ -33,6 +34,7 @@ FROM
     LEFT JOIN {{ source( dataset, 'ibd_level_of_service') }} as los ON los.id = rev.los_id AND los.call_type_id = calltype_id
     LEFT JOIN {{ source( dataset, 'cad_sources') }} AS source ON source.id = rev.source_id
     LEFT JOIN {{ source( dataset, 'ibd_subzones') }} as subzones ON rev.response_zone_id = subzones.subzone_id
+    LEFT JOIN {{ source( dataset, 'cad_reasons_for_transport') }} as rft on rev.reason_for_transport_id = rft.id
     ),
     {%  endfor %}
 
