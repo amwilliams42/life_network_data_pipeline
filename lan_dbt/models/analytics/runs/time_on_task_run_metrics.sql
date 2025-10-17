@@ -1,12 +1,15 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 with
     run_crew as (
-        select * from {{ ref('int_run_crew_assignments') }}
+        select *
+        from {{ ref('int_run_crew_assignments') }}
+        where service_date >= current_date - interval '5 weeks'
+        and service_date < current_date + interval '1 day'
     ),
 
     run_metrics as (
-        select
+        select distinct on (leg_id, source_database)
             -- Run identifiers
             run_number,
             leg_id,
@@ -89,6 +92,7 @@ with
             -- Cost center
             cost_center_id,
             cost_center_name,
+            special_event,
 
             -- Flags
             is_training,
@@ -115,6 +119,8 @@ with
             date_trunc('month', service_date)::date as month_start
 
         from run_crew
+        where calltype_name in ('ALS', 'BLS', 'CCT')
+        order by leg_id, source_database, shift_assignment_id
     )
 
 select * from run_metrics
