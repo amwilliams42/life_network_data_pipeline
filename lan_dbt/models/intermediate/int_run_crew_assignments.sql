@@ -1,5 +1,5 @@
 {{ config(
-    materialized='incremental',
+    materialized='table',
     unique_key=['leg_id', 'source_database', 'shift_assignment_id'],
     on_schema_change='sync_all_columns'
 ) }}
@@ -162,8 +162,3 @@ where
     and clear_time > assigned_time  -- Clear must be after assigned
     and time_on_task_minutes > 0  -- Must be positive
     and time_on_task_minutes < 720  -- Less than 12 hours (reasonable max for a single run)
-
-    {% if is_incremental() %}
-    -- Only process runs modified in the last 7 days for incremental updates
-    and run_modified_timestamp > (select max(run_modified_timestamp) from {{ this }})
-    {% endif %}
