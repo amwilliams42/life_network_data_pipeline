@@ -24,5 +24,4 @@ left join {{ ref('stg_run_cancels') }} c
 left join {{ ref('stg_run_timestamps') }} t
   on t.leg_id = r.leg_id
  and t.source_database = r.source_database
-where r.source_database = 'tn' and
-      (r.market = 'Memphis' or r.market = 'Mississippi')
+where r.source_database = 'il'
