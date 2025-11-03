@@ -1,0 +1,1 @@
+{{ generate_hourly_dow_stats('int_nash_runs') }}
