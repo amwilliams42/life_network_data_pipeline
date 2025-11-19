@@ -69,14 +69,14 @@ def load_cad_trips(
     def filter_by_date(query, table):
         if table.name == "cad_trip_legs_rev":
             # Only select rows where the column customer_id has value 1
-            return query.where(table.c.leg_date > '2025-01-01')
+            return query.where(table.c.leg_date > '2025-08-01')
         # Use the original query for other tables
         if table.name == "cad_trip_legs":
-            return query.where(table.c.created > '2025-01-01')
+            return query.where(table.c.created > '2025-08-01')
         if table.name == "cad_trips":
-            return query.where(table.c.created > '2025-01-01')
+            return query.where(table.c.created > '2025-08-01')
         if table.name == "cad_trip_history_log":
-            return query.where(table.c.timestamp > '2025-01-01')
+            return query.where(table.c.timestamp > '2025-08-01')
         return query
 
 

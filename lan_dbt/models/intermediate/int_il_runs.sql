@@ -24,4 +24,5 @@ left join {{ ref('stg_run_cancels') }} c
 left join {{ ref('stg_run_timestamps') }} t
   on t.leg_id = r.leg_id
  and t.source_database = r.source_database
-where r.source_database = 'il'
+where r.source_database = 'il' and
+      r.calltype_name in ('ALS', 'BLS','CCT')
