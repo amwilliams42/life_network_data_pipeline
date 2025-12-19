@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: demand_forecast_analysis
+    description: >
+      Combines forecasted demand with actual historical data for monitoring
+      and accuracy analysis. Includes prediction error metrics, confidence
+      intervals, and decomposition of forecast components. Use this model
+      for staffing decisions and forecast accuracy monitoring.
+    config:
+      materialized: table
+    columns:
+      - name: date_of_service
+        description: Date of service or forecast
+      - name: region
+        description: Region identifier (mem, il, mi, nash)
+      - name: predicted_calls
+        description: Predicted number of total calls
+      - name: predicted_calls_lower
+        description: Lower bound of 80% confidence interval
+      - name: predicted_calls_upper
+        description: Upper bound of 80% confidence interval
+      - name: actual_calls
+        description: Actual number of calls (NULL for future dates)
+      - name: actual_ran
+        description: Actual number of calls that ran (NULL for future dates)
+      - name: actual_turned
+        description: Actual number of turned calls (NULL for future dates)
+      - name: actual_cancelled
+        description: Actual number of cancelled calls (NULL for future dates)
+      - name: absolute_error
+        description: Absolute difference between predicted and actual (historical only)
+      - name: percentage_error
+        description: Percentage error of prediction (historical only)
+      - name: forecast_bias
+        description: >
+          Signed error (predicted - actual). Positive means over-forecasting,
+          negative means under-forecasting
+      - name: within_confidence_interval
+        description: Boolean - whether actual fell within the 80% confidence interval
+      - name: trend
+        description: Long-term trend component
+      - name: weekly_seasonality
+        description: Day of week seasonal pattern
+      - name: yearly_seasonality
+        description: Time of year seasonal pattern
+      - name: is_weekend
+        description: Boolean indicator for weekend
+      - name: holiday_effect
+        description: Impact of US holidays on demand
+      - name: day_after_holiday_effect
+        description: Impact of day after holiday on demand
+      - name: working_day_before_effect
+        description: Impact of working day before holiday on demand
+      - name: is_future_forecast
+        description: Boolean - true for future dates, false for historical dates
+      - name: year
+        description: Year
+      - name: month
+        description: Month (1-12)
+      - name: day_of_week_num
+        description: Day of week number (0=Sunday, 6=Saturday)
+      - name: day_of_week_name
+        description: Day of week name (Sunday, Monday, etc)

@@ -3,11 +3,28 @@
 with
     shift_metrics as (
         select * from {{ ref('int_shift_metrics') }}
+    ),
+
+    -- Get all crew members for each shift to identify partners
+    shift_partners as (
+        select
+            sm1.assignment_id,
+            string_agg(
+                distinct sm2.assigned_name,
+                ', '
+                order by sm2.assigned_name
+            ) filter (where sm2.assignment_id != sm1.assignment_id) as partner_crew_members
+        from shift_metrics sm1
+        left join shift_metrics sm2
+            on sm1.unit_id = sm2.unit_id
+            and sm1.shift_date = sm2.shift_date
+            and sm1.source_database = sm2.source_database
+        group by sm1.assignment_id
     )
 
 select
     -- Crew identifiers
-    assignment_id,
+    sp.assignment_id,
     shift_assignment_id,
     user_id,
     first_name,
@@ -88,7 +105,11 @@ select
     extract(dow from shift_date) as day_of_week,
     to_char(shift_date, 'Day') as day_name,
     date_trunc('week', shift_date)::date as week_start,
-    date_trunc('month', shift_date)::date as month_start
+    date_trunc('month', shift_date)::date as month_start,
+
+    -- Partner crew members on the same shift
+    sp.partner_crew_members
 
 from shift_metrics
+left join shift_partners sp on shift_metrics.assignment_id = sp.assignment_id
 order by shift_date desc, assigned_name

@@ -5,3 +5,267 @@ models:
     description: "Shift assigments"
   - name: sched_hours
     description: "Aggregated hours by date and cost center across all markets with cross join to ensure every cost center has an entry for every date"
+  - name: crew_efficiency_weekly
+    description: "Weekly crew member efficiency metrics aggregated from shift-level data. Provides average time on task, average time on scene, average response time, total calls ran, and UHU metrics for each crew member by week. Excludes training shifts."
+    columns:
+      - name: user_id
+        description: "Unique identifier for the crew member"
+      - name: employee_num
+        description: "Employee number"
+      - name: week_start
+        description: "First day of the week (Sunday)"
+      - name: week_end
+        description: "Last day of the week (Saturday)"
+      - name: total_calls_ran
+        description: "Total number of call legs completed during the week"
+      - name: avg_time_on_task_minutes
+        description: "Weighted average total time on task per call (from assignment to clear) in minutes"
+      - name: avg_scene_time_minutes
+        description: "Weighted average time on scene per call in minutes"
+      - name: avg_response_time_minutes
+        description: "Weighted average response time per call (call started to at scene) in minutes"
+      - name: weekly_uhu
+        description: "Weekly Unit Hour Utilization - total calls divided by total scheduled hours"
+      - name: avg_daily_uhu
+        description: "Average of daily UHU values across the week"
+      - name: time_on_task_pct
+        description: "Percentage of scheduled time spent on task"
+      - name: shifts_worked
+        description: "Number of shifts worked during the week"
+  - name: weekly_scheduling_summary
+    description: "Weekly scheduling summary report by region showing shifts worked, open shifts, overtime, and staffing coverage for the previous week (Sunday-Saturday). Excludes training shifts."
+    columns:
+      - name: region
+        description: "Region name (Tennessee, Michigan, Illinois)"
+      - name: week_start
+        description: "First day of the reporting week (Sunday)"
+      - name: week_end
+        description: "Last day of the reporting week (Saturday)"
+      - name: total_shifts_scheduled
+        description: "Total number of unique shifts scheduled (by unit, date, and time)"
+      - name: total_shift_positions_scheduled
+        description: "Total number of individual positions scheduled across all shifts"
+      - name: positions_filled
+        description: "Number of positions that have an assigned crew member"
+      - name: positions_open
+        description: "Number of positions without an assigned crew member"
+      - name: completely_open_shifts
+        description: "Count of shifts where no positions are filled"
+      - name: understaffed_shifts
+        description: "Count of shifts with at least one position filled but some positions still open"
+      - name: total_problem_shifts
+        description: "Combined count of completely open and understaffed shifts"
+      - name: unique_employees_worked
+        description: "Number of unique employees who worked during the week"
+      - name: total_scheduled_hours
+        description: "Total hours scheduled across all positions"
+      - name: scheduled_hours_open
+        description: "Hours scheduled but unfilled (open positions)"
+      - name: actual_hours_worked
+        description: "Actual hours worked from timesheets"
+      - name: employees_with_scheduled_overtime
+        description: "Count of employees scheduled for more than 40 hours in the week"
+      - name: total_overtime_hours_scheduled
+        description: "Total overtime hours scheduled (hours beyond 40 per employee)"
+      - name: coverage_pct
+        description: "Percentage of scheduled positions that are filled"
+      - name: hours_worked_vs_scheduled_pct
+        description: "Actual hours worked as a percentage of scheduled hours (callout/no-show indicator)"
+  - name: weekly_shift_detail
+    description: "Detailed shift-level breakdown for the previous week (Sunday-Saturday) with one row per employee per shift. Includes shift status, partners, staffing context, and overtime indicators. Excludes training shifts."
+    columns:
+      - name: week_start
+        description: "First day of the reporting week (Sunday)"
+      - name: week_end
+        description: "Last day of the reporting week (Saturday)"
+      - name: region
+        description: "Region name (Tennessee, Michigan, Illinois)"
+      - name: employee_num
+        description: "Employee number"
+      - name: assigned_name
+        description: "Employee name (Last, First)"
+      - name: shift_date
+        description: "Date of the shift"
+      - name: shift_start
+        description: "Shift start time"
+      - name: shift_end
+        description: "Shift end time"
+      - name: scheduled_hours
+        description: "Hours scheduled for this shift"
+      - name: actual_hours_worked
+        description: "Actual hours worked from timesheet"
+      - name: unit_name
+        description: "Unit/truck assigned to"
+      - name: assignment_status
+        description: "ASSIGNED or OPEN"
+      - name: is_open_shift
+        description: "True if this shift position has no employee assigned"
+      - name: is_no_show
+        description: "True if assigned but did not clock in"
+      - name: is_callout_partial
+        description: "True if worked less than 90% of scheduled hours"
+      - name: shift_is_understaffed
+        description: "True if this shift has open or unfilled positions"
+      - name: partner_crew_members
+        description: "Comma-separated list of other crew members on this shift"
+      - name: partner_count
+        description: "Number of partners on this shift"
+      - name: employee_total_scheduled_hours
+        description: "Employee's total scheduled hours for the entire week"
+      - name: employee_total_worked_hours
+        description: "Employee's total worked hours for the entire week"
+      - name: employee_has_overtime
+        description: "True if employee scheduled for more than 40 hours in the week"
+      - name: employee_overtime_hours
+        description: "Hours over 40 for this employee for the week"
+  - name: upcoming_pay_period_scheduling_summary
+    description: "Upcoming pay period scheduling forecast by region showing scheduled shifts, open positions, and projected overtime. Shows the next pay period that starts after today. Excludes training shifts."
+    columns:
+      - name: region
+        description: "Region name (Tennessee, Michigan, Illinois)"
+      - name: pay_period_start
+        description: "First day of the upcoming pay period"
+      - name: pay_period_end
+        description: "Last day of the upcoming pay period"
+      - name: pay_period_year
+        description: "Year of the pay period"
+      - name: pay_period_number
+        description: "Pay period number within the year"
+      - name: total_shifts_scheduled
+        description: "Total number of unique shifts scheduled for the pay period"
+      - name: positions_filled
+        description: "Number of positions that have an assigned crew member"
+      - name: positions_open
+        description: "Number of positions still needing coverage"
+      - name: completely_open_shifts
+        description: "Count of shifts where no positions are filled yet"
+      - name: understaffed_shifts
+        description: "Count of shifts with at least one position filled but some positions still open"
+      - name: total_problem_shifts
+        description: "Combined count of completely open and understaffed shifts needing attention"
+      - name: unique_employees_scheduled
+        description: "Number of unique employees scheduled for the pay period"
+      - name: employees_with_scheduled_overtime
+        description: "Count of employees scheduled for more than 40 hours in the pay period"
+      - name: total_overtime_hours_scheduled
+        description: "Total overtime hours scheduled (hours beyond 40 per employee)"
+      - name: coverage_pct
+        description: "Percentage of scheduled positions that are filled"
+      - name: positions_open_pct
+        description: "Percentage of positions still needing coverage"
+  - name: upcoming_pay_period_shift_detail
+    description: "Detailed shift-level breakdown for the upcoming pay period with one row per position per shift. Shows staffing status, open positions, and overtime projections. Excludes training shifts."
+    columns:
+      - name: pay_period_start
+        description: "First day of the upcoming pay period"
+      - name: pay_period_end
+        description: "Last day of the upcoming pay period"
+      - name: pay_period_year
+        description: "Year of the pay period"
+      - name: pay_period_number
+        description: "Pay period number within the year"
+      - name: region
+        description: "Region name (Tennessee, Michigan, Illinois)"
+      - name: employee_num
+        description: "Employee number (NULL if position is open)"
+      - name: assigned_name
+        description: "Employee name (Last, First) - NULL if position is open"
+      - name: shift_date
+        description: "Date of the shift"
+      - name: days_until_shift
+        description: "Number of days from today until this shift"
+      - name: shift_start
+        description: "Shift start time"
+      - name: shift_end
+        description: "Shift end time"
+      - name: scheduled_hours
+        description: "Hours scheduled for this shift"
+      - name: unit_name
+        description: "Unit/truck assigned to"
+      - name: assignment_status
+        description: "ASSIGNED or OPEN"
+      - name: is_open_shift
+        description: "True if this shift position has no employee assigned yet"
+      - name: is_today
+        description: "True if shift is today"
+      - name: is_tomorrow
+        description: "True if shift is tomorrow"
+      - name: is_within_3_days
+        description: "True if shift is within the next 3 days (urgent staffing need)"
+      - name: shift_is_understaffed
+        description: "True if this shift has open or unfilled positions"
+      - name: shift_staffing_status
+        description: "COMPLETELY_OPEN, UNDERSTAFFED, or FULLY_STAFFED"
+      - name: partner_crew_members
+        description: "Comma-separated list of other crew members scheduled for this shift"
+      - name: partner_count
+        description: "Number of partners on this shift"
+      - name: employee_total_scheduled_hours
+        description: "Employee's total scheduled hours for the entire pay period"
+      - name: employee_has_overtime
+        description: "True if employee scheduled for more than 40 hours in the pay period"
+      - name: employee_overtime_hours
+        description: "Hours over 40 for this employee for the pay period"
+  - name: upcoming_week_shift_report
+    description: "Meeting-ready report showing all shifts for the upcoming 7 days, organized by day and market. Includes shift details, employee cumulative hours through the week, and daily summaries of open shifts and hours. One row per position per shift. Filters to operational cost centers only (excludes support/admin positions)."
+    columns:
+      - name: region
+        description: "Region/market name (Memphis [includes Memphis & Mississippi], Nashville, Michigan, Illinois)"
+      - name: shift_date
+        description: "Date of the shift"
+      - name: day_name
+        description: "Day of week (Monday, Tuesday, etc.)"
+      - name: assigned_name
+        description: "Employee name (Last, First) - NULL if position is open"
+      - name: employee_num
+        description: "Employee number (NULL if position is open)"
+      - name: job_title
+        description: "Employee's job title"
+      - name: shift_start
+        description: "Shift start time"
+      - name: shift_end
+        description: "Shift end time"
+      - name: scheduled_hours
+        description: "Hours scheduled for this shift"
+      - name: cumulative_hours_week
+        description: "Running total of employee's hours through the week up to and including this shift"
+      - name: employee_week_total_hours
+        description: "Employee's total scheduled hours for the entire 7-day week"
+      - name: employee_has_overtime
+        description: "True if employee scheduled for more than 40 hours in the 7-day week"
+      - name: employee_overtime_hours
+        description: "Total overtime hours for this employee in the 7-day week (hours over 40)"
+      - name: unit_name
+        description: "Unit/truck assigned to"
+      - name: position_slot
+        description: "Position slot on the unit"
+      - name: assignment_status
+        description: "ASSIGNED or OPEN"
+      - name: is_open_shift
+        description: "True if this position has no employee assigned"
+      - name: shift_staffing_status
+        description: "COMPLETELY_OPEN, UNDERSTAFFED, or FULLY_STAFFED"
+      - name: shift_total_positions
+        description: "Total positions on this shift"
+      - name: shift_filled_positions
+        description: "Number of filled positions on this shift"
+      - name: shift_open_positions
+        description: "Number of open positions on this shift"
+      - name: partner_crew_members
+        description: "Comma-separated list of other crew members on this shift"
+      - name: partner_count
+        description: "Number of partners on this shift"
+      - name: is_today
+        description: "True if shift is today"
+      - name: is_tomorrow
+        description: "True if shift is tomorrow"
+      - name: is_within_3_days
+        description: "True if shift is within the next 3 days"
+      - name: days_until_shift
+        description: "Number of days from today until this shift"
+      - name: cost_center_name
+        description: "Cost center name for the shift"
+      - name: day_market_open_shifts
+        description: "Total number of open shifts for this day and market (repeated for all rows on same day/market)"
+      - name: day_market_open_hours
+        description: "Total hours of open shifts for this day and market (repeated for all rows on same day/market)"
