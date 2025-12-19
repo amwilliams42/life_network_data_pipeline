@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: predictions
+    description: >
+      External predictions schema populated by Prefect flows.
+      Contains forecasted data from machine learning models.
+    schema: predictions
+    tables:
+      - name: demand_forecast
+        description: >
+          Prophet-generated demand forecasts by region.
+          Populated by the Prefect demand_forecast flow.

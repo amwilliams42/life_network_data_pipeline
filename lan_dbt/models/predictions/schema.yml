@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: demand_forecast
+    description: >
+      Prophet-based forecasting model that predicts daily call volume for each region
+      30 days into the future. Includes holiday effects, weekend patterns, and
+      trend/seasonality decomposition.
+
+      NOTE: This is a view over the predictions.demand_forecast table which is
+      populated by the Prefect demand_forecast flow. Run that flow first to populate data.
+    config:
+      materialized: view
+    columns:
+      - name: date_of_service
+        description: Date of the forecast
+      - name: region
+        description: Region identifier (mem, il, mi, nash)
+      - name: predicted_calls
+        description: Predicted number of total calls for the day (rounded to whole number)
+      - name: predicted_calls_lower
+        description: Lower bound of 80% confidence interval
+      - name: predicted_calls_upper
+        description: Upper bound of 80% confidence interval
+      - name: trend
+        description: Long-term trend component from Prophet model
+      - name: weekly
+        description: Weekly seasonality component (day of week pattern)
+      - name: yearly
+        description: Yearly seasonality component (time of year pattern)
+      - name: is_weekend
+        description: Binary indicator for weekend (Saturday/Sunday)
+      - name: holiday_effect
+        description: Additive effect of US holidays on demand
+      - name: day_after_holiday_effect
+        description: Additive effect of the day after a holiday
+      - name: working_day_before_effect
+        description: Additive effect of the working day before a holiday
+
+  - name: int_daily_demand_history
+    description: >
+      Daily aggregation of call volumes by region. Includes total calls,
+      run outcomes (ran/turned/cancelled), and date features for analysis.
+      This is the historical data used to train the forecasting model.
+    config:
+      materialized: table
+    columns:
+      - name: date_of_service
+        description: Date of service
+      - name: region
+        description: Region identifier (mem, il, mi, nash)
+      - name: total_calls
+        description: Total number of calls for the day
+      - name: ran_count
+        description: Number of calls that were completed (ran)
+      - name: turned_count
+        description: Number of calls that were turned away
+      - name: cancelled_count
+        description: Number of cancelled calls
+      - name: day_of_week_num
+        description: Day of week as number (0=Sunday, 6=Saturday)
+      - name: day_of_week_name
+        description: Day of week as text (Sunday, Monday, etc)
+      - name: month
+        description: Month number (1-12)
+      - name: year
+        description: Year
+      - name: is_weekend
+        description: Boolean flag for weekend dates
