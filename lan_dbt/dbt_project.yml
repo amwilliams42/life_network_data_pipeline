@@ -38,6 +38,9 @@ models:
     intermediate:
       +materialized: view
       +schema: intermediate
+    bigquery:
+      +materialized: table
+      +schema: bigquery
 
 seeds:
   lan_dbt:

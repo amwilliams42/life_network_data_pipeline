@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: daily_dashboard
+    description: >
+      Daily operational dashboard metrics aggregated by date and region.
+      TN is split into tn_memphis (Memphis + Mississippi) and tn_nashville.
+      Designed for upload to BigQuery and consumption in PowerBI dashboards and Excel reports.
+    columns:
+      - name: date_of_service
+        description: The date of the transport/call
+      - name: region
+        description: Region identifier (il, mi, tn_memphis, tn_nashville)
+      - name: total_transports
+        description: Total number of completed transports (ran)
+      - name: transports_als
+        description: Number of ALS (Advanced Life Support) transports
+      - name: transports_bls
+        description: Number of BLS (Basic Life Support) transports
+      - name: transports_sct_cct
+        description: Number of SCT/CCT (Specialty Care/Critical Care) transports
+      - name: prescheduled_runs
+        description: >
+          Number of runs that were pre-scheduled (created before 3pm the day before service date)
+      - name: runs_over_50_miles
+        description: Number of completed transports with mileage greater than 50 miles
+      - name: scene_time_over_45_min
+        description: Number of completed transports with scene time exceeding 45 minutes
+      - name: destination_time_over_45_min
+        description: Number of completed transports with destination time exceeding 45 minutes
+      - name: turns
+        description: >
+          Number of turned calls (crew dispatched but transport not completed, with lost_call_status)
+      - name: cancels
+        description: Number of cancelled calls (no transport, no lost_call_status)
+      - name: total_calls
+        description: Total number of all calls (ran + turned + cancelled)
+      - name: prescheduled_pct
+        description: Percentage of total calls that were pre-scheduled
+      - name: long_distance_pct
+        description: Percentage of completed transports over 50 miles
+      - name: turn_rate_pct
+        description: Percentage of total calls that were turns
+      - name: cancel_rate_pct
+        description: Percentage of total calls that were cancellations
