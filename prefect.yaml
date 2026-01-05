@@ -86,11 +86,29 @@ _templates:
       dataset_name: traumasoft_il
       source_name: il_database
 
+  # Tiered CAD reconciliation schedules
+  sunday_2am_schedule: &sunday_2am_schedule
+    cron: "0 2 * * 0"  # Sunday at 0200
+  monthly_1st_2am_schedule: &monthly_1st_2am_schedule
+    cron: "0 2 1 * *"  # 1st of month at 0200
+
   # Common deployment templates
-  cad_import_template: &cad_import_template
-    description: Pull new and updated CAD trips every 30 minutes
-    schedule: *thirty_minute_schedule
-    entrypoint: flows/cad_import.py:load_cad_trips
+  cad_recent_template: &cad_recent_template
+    description: Pull CAD trips from last 24 hours (near-real-time)
+    schedule: *ten_minute_schedule
+    entrypoint: flows/cad_import.py:load_cad_recent
+    work_pool: *default_work_pool
+
+  cad_weekly_template: &cad_weekly_template
+    description: Pull CAD trips for last full week (Sun-Sat) + refresh reference tables
+    schedule: *sunday_2am_schedule
+    entrypoint: flows/cad_import.py:load_cad_weekly
+    work_pool: *default_work_pool
+
+  cad_monthly_template: &cad_monthly_template
+    description: Pull CAD trips for last full month (week by week)
+    schedule: *monthly_1st_2am_schedule
+    entrypoint: flows/cad_import.py:load_cad_monthly
     work_pool: *default_work_pool
 
   daily_import_template: &daily_import_template
@@ -98,10 +116,33 @@ _templates:
     entrypoint: flows/daily_import.py:daily_import
     work_pool: *default_work_pool
 
-  schedule_pull_template: &schedule_pull_template
-    description: Pull Schedule and Timesheet changes every hour
-    schedule: *one_hour_schedule
-    entrypoint: flows/schedule_flows.py:schedule_refresh_flow
+  # Tiered Schedule reconciliation schedules
+  saturday_2359_schedule: &saturday_2359_schedule
+    cron: "59 23 * * 6"  # Saturday at 2359
+
+  # Schedule deployment templates
+  schedule_recent_template: &schedule_recent_template
+    description: Pull schedule data from last 24 hours to 7 days ahead
+    schedule: *ten_minute_schedule
+    entrypoint: flows/schedule_flows.py:load_schedule_recent
+    work_pool: *default_work_pool
+
+  schedule_weekly_template: &schedule_weekly_template
+    description: Pull schedule data for last full week to 7 days ahead
+    schedule: *sunday_2am_schedule
+    entrypoint: flows/schedule_flows.py:load_schedule_weekly
+    work_pool: *default_work_pool
+
+  schedule_monthly_template: &schedule_monthly_template
+    description: Pull schedule data for last full month (week by week)
+    schedule: *monthly_1st_2am_schedule
+    entrypoint: flows/schedule_flows.py:load_schedule_monthly
+    work_pool: *default_work_pool
+
+  schedule_snapshot_template: &schedule_snapshot_template
+    description: Take weekly snapshot of upcoming schedule before week starts
+    schedule: *saturday_2359_schedule
+    entrypoint: flows/schedule_flows.py:snapshot_schedule_weekly
     work_pool: *default_work_pool
 
 deployments:
@@ -115,22 +156,51 @@ deployments:
     work_pool: *default_work_pool
     tags: *test_tags
   
-  # CAD Trips imports
-  - <<: *cad_import_template
-    name: TN Pull CAD Trips
-    description: Pull new and updated CAD trips for TN and MS every 5 minutes
+  # CAD Recent (every 10 minutes - last 24 hours)
+  - <<: *cad_recent_template
+    name: TN CAD Recent
     parameters: *state_tn
     tags: *tn_tags
 
-  - <<: *cad_import_template
-    name: MI Pull CAD Trips
-    description: Pull new and updated CAD trips for MI every 5 minutes
+  - <<: *cad_recent_template
+    name: MI CAD Recent
     parameters: *state_mi
     tags: *mi_tags
 
-  - <<: *cad_import_template
-    name: IL Pull CAD Trips
-    description: Pull new and updated CAD trips for IL every 5 minutes
+  - <<: *cad_recent_template
+    name: IL CAD Recent
+    parameters: *state_il
+    tags: *il_tags
+
+  # CAD Weekly (Sunday 0200 - last full week + reference tables)
+  - <<: *cad_weekly_template
+    name: TN CAD Weekly
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *cad_weekly_template
+    name: MI CAD Weekly
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *cad_weekly_template
+    name: IL CAD Weekly
+    parameters: *state_il
+    tags: *il_tags
+
+  # CAD Monthly (1st of month 0200 - last full month, week by week)
+  - <<: *cad_monthly_template
+    name: TN CAD Monthly
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *cad_monthly_template
+    name: MI CAD Monthly
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *cad_monthly_template
+    name: IL CAD Monthly
     parameters: *state_il
     tags: *il_tags
   
@@ -150,19 +220,67 @@ deployments:
     parameters: *state_il
     tags: *il_tags
   
-  # Schedule pulls
-  - <<: *schedule_pull_template
-    name: TN Schedule Pull
+  # Schedule Recent (every 10 minutes - last 24 hours to 7 days ahead)
+  - <<: *schedule_recent_template
+    name: TN Schedule Recent
     parameters: *state_tn
     tags: *tn_tags
 
-  - <<: *schedule_pull_template
-    name: MI Schedule Pull
+  - <<: *schedule_recent_template
+    name: MI Schedule Recent
     parameters: *state_mi
     tags: *mi_tags
 
-  - <<: *schedule_pull_template
-    name: IL Schedule Pull
+  - <<: *schedule_recent_template
+    name: IL Schedule Recent
+    parameters: *state_il
+    tags: *il_tags
+
+  # Schedule Weekly (Sunday 0200 - last full week to 7 days ahead)
+  - <<: *schedule_weekly_template
+    name: TN Schedule Weekly
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *schedule_weekly_template
+    name: MI Schedule Weekly
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *schedule_weekly_template
+    name: IL Schedule Weekly
+    parameters: *state_il
+    tags: *il_tags
+
+  # Schedule Monthly (1st of month 0200 - last full month, week by week)
+  - <<: *schedule_monthly_template
+    name: TN Schedule Monthly
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *schedule_monthly_template
+    name: MI Schedule Monthly
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *schedule_monthly_template
+    name: IL Schedule Monthly
+    parameters: *state_il
+    tags: *il_tags
+
+  # Schedule Snapshot (Saturday 2359 - capture upcoming week's schedule)
+  - <<: *schedule_snapshot_template
+    name: TN Schedule Snapshot
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *schedule_snapshot_template
+    name: MI Schedule Snapshot
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *schedule_snapshot_template
+    name: IL Schedule Snapshot
     parameters: *state_il
     tags: *il_tags
 
