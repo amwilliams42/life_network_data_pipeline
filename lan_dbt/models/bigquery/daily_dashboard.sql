@@ -47,13 +47,28 @@ run_details as (
         -- Cancel info for outcome classification
         c.lost_call_status,
 
-        -- Classify run outcome
+        -- Is this a valid transport level of service (ALS, BLS, or CCT/SCT)
         case
-            when r.last_status_id > 0 then 'ran'
+            when r.level_of_service ilike '%ALS%'
+                or r.level_of_service ilike '%BLS%'
+                or r.level_of_service ilike '%CCT%'
+                or r.level_of_service ilike '%SCT%'
+            then true
+            else false
+        end as is_transport_los,
+
+        -- Classify run outcome (only count as 'ran' if valid transport LOS)
+        case
+            when r.last_status_id > 0 and (
+                r.level_of_service ilike '%ALS%'
+                or r.level_of_service ilike '%BLS%'
+                or r.level_of_service ilike '%CCT%'
+                or r.level_of_service ilike '%SCT%'
+            ) then 'ran'
             when r.last_status_id < 0 and c.lost_call_status is not null then 'turned'
             when r.last_status_id < 0 and c.lost_call_status is null then 'cancelled'
             when r.last_status_id is null then 'cancelled'
-            else 'unknown'
+            else 'other'
         end as run_outcome,
 
         -- Pre-scheduled: created before 3pm the day before service
