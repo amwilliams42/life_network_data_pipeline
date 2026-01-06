@@ -21,7 +21,7 @@ BIGQUERY_TABLES = [
 
 @flow
 def export_to_bigquery(
-    postgres_schema: str = "lifedata_bigquery",
+    postgres_schema: str = "bigquery",
     bigquery_dataset: str = "lan_analytics",
 ) -> None:
     """
@@ -45,7 +45,7 @@ def export_to_bigquery(
 
     # Source from local PostgreSQL (the dbt output database)
     source = sql_database(
-        credentials=dlt.secrets["destination.postgres.credentials"],
+        credentials=dlt.secrets["sources.local_postgres.credentials"],
         schema=postgres_schema,
         table_names=BIGQUERY_TABLES,
     )
