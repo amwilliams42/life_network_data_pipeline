@@ -23,6 +23,7 @@ run_details as (
         r.run_number,
         r.date_of_service,
         r.level_of_service,
+        r.calltype_name,
         r.source_database,
         r.market,
         r.last_status_id,
@@ -49,10 +50,10 @@ run_details as (
 
         -- Is this a valid transport level of service (ALS, BLS, or CCT/SCT)
         case
-            when r.level_of_service ilike '%ALS%'
-                or r.level_of_service ilike '%BLS%'
-                or r.level_of_service ilike '%CCT%'
-                or r.level_of_service ilike '%SCT%'
+            when r.calltype_name ilike '%ALS%'
+                or r.calltype_name ilike '%BLS%'
+                or r.calltype_name ilike '%CCT%'
+                or r.calltype_name ilike '%SCT%'
             then true
             else false
         end as is_transport_los,
@@ -60,10 +61,10 @@ run_details as (
         -- Classify run outcome (only count as 'ran' if valid transport LOS)
         case
             when r.last_status_id > 0 and (
-                r.level_of_service ilike '%ALS%'
-                or r.level_of_service ilike '%BLS%'
-                or r.level_of_service ilike '%CCT%'
-                or r.level_of_service ilike '%SCT%'
+                r.calltype_name ilike '%ALS%'
+                or r.calltype_name ilike '%BLS%'
+                or r.calltype_name ilike '%CCT%'
+                or r.calltype_name ilike '%SCT%'
             ) then 'ran'
             when r.last_status_id < 0 and c.lost_call_status is not null then 'turned'
             when r.last_status_id < 0 and c.lost_call_status is null then 'cancelled'
@@ -100,9 +101,9 @@ daily_metrics as (
         count(case when run_outcome = 'ran' then leg_id end) as total_transports,
 
         -- Transports by level of service
-        count(case when run_outcome = 'ran' and level_of_service ilike '%ALS%' then leg_id end) as transports_als,
-        count(case when run_outcome = 'ran' and level_of_service ilike '%BLS%' then leg_id end) as transports_bls,
-        count(case when run_outcome = 'ran' and (level_of_service ilike '%SCT%' or level_of_service ilike '%CCT%') then leg_id end) as transports_sct_cct,
+        count(case when run_outcome = 'ran' and calltype_name ilike '%ALS%' then leg_id end) as transports_als,
+        count(case when run_outcome = 'ran' and calltype_name ilike '%BLS%' then leg_id end) as transports_bls,
+        count(case when run_outcome = 'ran' and (calltype_name ilike '%SCT%' or calltype_name ilike '%CCT%') then leg_id end) as transports_sct_cct,
 
         -- Pre-scheduled runs (all outcomes)
         count(case when is_prescheduled then leg_id end) as prescheduled_runs,
