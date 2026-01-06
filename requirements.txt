@@ -151,3 +151,5 @@ whenever==0.8.8
 zipp==3.23.0
 prophet>=1.1.4
 holidays>=0.35
+google-cloud-bigquery>=3.0.0
+db-dtypes>=1.0.0

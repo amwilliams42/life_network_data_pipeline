@@ -52,6 +52,8 @@ _templates:
     interval: 1800
   one_hour_schedule: &one_hour_schedule
     interval: 3600
+  four_hour_schedule: &four_hour_schedule
+    interval: 14400
   daily_schedule: &daily_schedule
     interval: 86400
   daily_2am_schedule: &daily_2am_schedule
@@ -297,3 +299,11 @@ deployments:
     schedule: *one_hour_schedule
     entrypoint: flows/messaging.py:run_evidence_build
     work_pool: *default_work_pool
+
+  # BigQuery Export
+  - name: BigQuery Export
+    description: Export dbt bigquery schema models to Google BigQuery for PowerBI
+    schedule: *four_hour_schedule
+    entrypoint: flows/bigquery_export.py:export_all_to_bigquery
+    work_pool: *default_work_pool
+    tags: *global_tags
