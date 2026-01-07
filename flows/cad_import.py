@@ -7,9 +7,9 @@ This module implements a tiered data reconciliation strategy:
 3. Monthly (1st of month 0200): Last month, processed week by week
 
 Tables with date filtering:
-- cad_trip_legs_rev (leg_date)
+- cad_trip_legs_rev (modified) - uses composite PK (leg_id, rev)
 - cad_trip_legs (created)
-- cad_trips (created)
+- cad_trips (trip_date)
 - cad_trip_history_log (timestamp)
 """
 
@@ -24,18 +24,39 @@ from prefect.logging import get_run_logger
 
 
 # Date column mapping for filtered tables
-DATE_COLUMNS = {
+# Recent/weekly use 'modified' to catch updates; monthly uses 'leg_date' for full period coverage
+DATE_COLUMNS_RECENT = {
+    "cad_trip_legs_rev": "modified",
+    "cad_trip_legs": "created",
+    "cad_trips": "trip_date",
+    "cad_trip_history_log": "timestamp",
+}
+
+DATE_COLUMNS_MONTHLY = {
     "cad_trip_legs_rev": "leg_date",
     "cad_trip_legs": "created",
-    "cad_trips": "created",
+    "cad_trips": "trip_date",
     "cad_trip_history_log": "timestamp",
 }
 
 
-def create_date_filter(start_date: datetime.datetime, end_date: datetime.datetime) -> Callable:
-    """Create a query adapter callback that filters tables by their date columns."""
+def create_date_filter(
+    start_date: datetime.datetime,
+    end_date: datetime.datetime,
+    use_leg_date: bool = False,
+) -> Callable:
+    """Create a query adapter callback that filters tables by their date columns.
+
+    Args:
+        start_date: Start of date range (inclusive)
+        end_date: End of date range (exclusive)
+        use_leg_date: If True, use leg_date for cad_trip_legs_rev (for monthly).
+                      If False, use modified (for recent/weekly).
+    """
+    date_columns = DATE_COLUMNS_MONTHLY if use_leg_date else DATE_COLUMNS_RECENT
+
     def filter_by_date(query, table):
-        date_col = DATE_COLUMNS.get(table.name)
+        date_col = date_columns.get(table.name)
         if date_col:
             return query.where(
                 (table.c[date_col] >= start_date) &
@@ -51,7 +72,7 @@ def get_date_filtered_tables(source_name: str, date_filter: Callable) -> list:
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_legs_rev",
         query_adapter_callback=date_filter,
-    ).apply_hints(primary_key="leg_id")
+    ).apply_hints(primary_key=["leg_id", "rev"])
 
     cad_trip_legs = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
@@ -226,7 +247,8 @@ def load_cad_monthly(
             dataset_name=dataset_name,
         )
 
-        date_filter = create_date_filter(start_datetime, end_datetime)
+        # Use leg_date for monthly reconciliation to capture all runs in the period
+        date_filter = create_date_filter(start_datetime, end_datetime, use_leg_date=True)
         tables = get_date_filtered_tables(source_name, date_filter)
 
         info = pipeline.run(tables, write_disposition="merge")
