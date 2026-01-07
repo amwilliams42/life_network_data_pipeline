@@ -285,6 +285,70 @@ def load_all_cad_monthly() -> None:
     load_cad_monthly("traumasoft_il", "il_database")
 
 
+@flow
+def load_cad_backfill(
+    start_date: str,
+    end_date: str,
+) -> None:
+    """
+    Backfill CAD data for a custom date range across all markets.
+
+    Processes the date range week by week using leg_date filtering.
+    Intended for manual runs to repopulate historical data.
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format (inclusive)
+        end_date: End date in YYYY-MM-DD format (inclusive)
+    """
+    logger = get_run_logger()
+
+    start = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+    end = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    logger.info(f"Starting backfill for all markets: {start} to {end}")
+
+    markets = [
+        ("traumasoft_tn", "tn_database"),
+        ("traumasoft_mi", "mi_database"),
+        ("traumasoft_il", "il_database"),
+    ]
+
+    for dataset_name, source_name in markets:
+        logger.info(f"Processing {dataset_name}")
+
+        # Process week by week
+        current_start = start
+        week_num = 1
+
+        while current_start <= end:
+            week_end = min(current_start + datetime.timedelta(days=6), end)
+
+            start_datetime = datetime.datetime.combine(current_start, datetime.time.min)
+            end_datetime = datetime.datetime.combine(week_end, datetime.time.max)
+
+            logger.info(f"  {dataset_name} week {week_num}: {current_start} to {week_end}")
+
+            pipeline = dlt.pipeline(
+                pipeline_name=f"cad_backfill_w{week_num}_{dataset_name}_{int(time.time())}",
+                destination='postgres',
+                dataset_name=dataset_name,
+            )
+
+            # Use leg_date for backfill to capture all runs in the period
+            date_filter = create_date_filter(start_datetime, end_datetime, use_leg_date=True)
+            tables = get_date_filtered_tables(source_name, date_filter)
+
+            info = pipeline.run(tables, write_disposition="merge")
+            logger.info(f"  Week {week_num} complete: {info}")
+
+            current_start = week_end + datetime.timedelta(days=1)
+            week_num += 1
+
+        logger.info(f"Completed {dataset_name} - processed {week_num - 1} weeks")
+
+    logger.info("Backfill complete for all markets")
+
+
 if __name__ == "__main__":
     # For testing, run the recent load
     load_all_cad_recent()
