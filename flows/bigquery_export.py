@@ -16,6 +16,9 @@ from prefect.logging import get_run_logger
 # Tables in the bigquery schema to export
 BIGQUERY_TABLES = [
     "daily_dashboard",
+    "bq_users",
+    "bq_runs",
+    "bq_shifts"
 ]
 
 

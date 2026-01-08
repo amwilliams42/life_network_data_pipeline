@@ -4,6 +4,8 @@ table_definitions: &common_tables
     description: "Configuration for different types of scheduling units/vehicles used in emergency services"
   - name: users
     description: "Employee and user information including credentials, contact details, and organizational structure"
+  - name: user_job_titles
+    description: "Job title definitions for user classification"
   - name: sched_units
     description: "Individual scheduling units/vehicles with their assignments and operational details"
   - name: sched_unit_certification_templates
