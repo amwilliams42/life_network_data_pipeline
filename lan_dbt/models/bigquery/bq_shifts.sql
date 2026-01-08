@@ -94,12 +94,12 @@ SELECT
     -- Scheduled shift times
     s.shift_start,
     s.shift_end,
-    s.scheduled_hours,
+    ROUND(s.scheduled_hours::numeric, 2) AS scheduled_hours,
 
     -- Actual clock in/out times
     s.clock_in_time,
     s.clock_out_time,
-    s.hours_difference AS actual_hours_worked,
+    ROUND(s.hours_difference::numeric, 2) AS actual_hours_worked,
 
     -- Variance
     CASE

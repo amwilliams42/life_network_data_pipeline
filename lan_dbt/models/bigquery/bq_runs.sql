@@ -146,21 +146,21 @@ runs_enriched AS (
         rt.requested_pickup_time,
         rt.orig_pickup_time,
 
-        -- Duration calculations (in minutes)
-        rt.call_to_assignment_minutes,
-        rt.assignment_to_ack_minutes,
-        rt.ack_to_enroute_minutes,
-        rt.enroute_to_scene_minutes AS response_leg_minutes,
-        rt.scene_time_minutes,
-        rt.transport_time_minutes,
-        rt.destination_to_clear_minutes,
-        rt.response_time_minutes,
-        rt.total_unit_time_minutes,
+        -- Duration calculations (in minutes, rounded for BigQuery NUMERIC compatibility)
+        ROUND(rt.call_to_assignment_minutes::numeric, 2) AS call_to_assignment_minutes,
+        ROUND(rt.assignment_to_ack_minutes::numeric, 2) AS assignment_to_ack_minutes,
+        ROUND(rt.ack_to_enroute_minutes::numeric, 2) AS ack_to_enroute_minutes,
+        ROUND(rt.enroute_to_scene_minutes::numeric, 2) AS response_leg_minutes,
+        ROUND(rt.scene_time_minutes::numeric, 2) AS scene_time_minutes,
+        ROUND(rt.transport_time_minutes::numeric, 2) AS transport_time_minutes,
+        ROUND(rt.destination_to_clear_minutes::numeric, 2) AS destination_to_clear_minutes,
+        ROUND(rt.response_time_minutes::numeric, 2) AS response_time_minutes,
+        ROUND(rt.total_unit_time_minutes::numeric, 2) AS total_unit_time_minutes,
 
         -- Time on Task (assigned to clear, in minutes)
         CASE
             WHEN rt.assigned_time IS NOT NULL AND rt.clear_time IS NOT NULL
-            THEN EXTRACT(EPOCH FROM (rt.clear_time - rt.assigned_time)) / 60.0
+            THEN ROUND((EXTRACT(EPOCH FROM (rt.clear_time - rt.assigned_time)) / 60.0)::numeric, 2)
         END AS time_on_task_minutes,
 
         -- Location details
@@ -204,7 +204,7 @@ runs_enriched AS (
         -- On-time calculation (pickup within 15 min of scheduled)
         CASE
             WHEN rt.pickup_time IS NOT NULL AND rt.appointment_time IS NOT NULL
-            THEN EXTRACT(EPOCH FROM (rt.pickup_time - rt.appointment_time)) / 60.0
+            THEN ROUND((EXTRACT(EPOCH FROM (rt.pickup_time - rt.appointment_time)) / 60.0)::numeric, 2)
         END AS pickup_variance_minutes,
 
         CASE
