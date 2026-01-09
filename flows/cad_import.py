@@ -148,6 +148,16 @@ def load_cad_recent(
     tables = get_date_filtered_tables(source_name, date_filter)
 
     info = pipeline.run(tables, write_disposition="merge")
+    # Load reference tables (full replace)
+    ref_pipeline = dlt.pipeline(
+        pipeline_name=f"cad_weekly_ref_{dataset_name}_{int(time.time())}",
+        destination='postgres',
+        dataset_name=dataset_name,
+    )
+
+    reference_tables = get_reference_tables(source_name)
+
+    ref_info = ref_pipeline.run(reference_tables, write_disposition="replace")
     logger.info(f"Recent load complete: {info}")
 
 
