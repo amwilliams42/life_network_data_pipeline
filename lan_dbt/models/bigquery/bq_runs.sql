@@ -57,11 +57,6 @@ all_leg_assignments AS (
     SELECT * FROM il_leg_assignments
 ),
 
--- Get schedule info for crew members on runs (using full schedule for historical data)
-schedule AS (
-    SELECT * FROM {{ ref('stg_schedule_full') }}
-),
-
 -- Pay periods for date context
 pay_periods AS (
     SELECT * FROM {{ ref('pay_periods') }}
@@ -185,9 +180,8 @@ runs_enriched AS (
         r.mileage,
         CASE WHEN r.mileage > 50 THEN true ELSE false END AS is_long_distance,
 
-        -- Crew assignment (links run to shift)
+        -- Crew assignment (links run to shift - join to bq_shifts in PowerBI for shift details)
         la.shift_assignment_id,
-        s.assignment_id,
 
         -- Flags for filtering
         CASE
@@ -241,9 +235,6 @@ runs_enriched AS (
     LEFT JOIN all_leg_assignments la
         ON r.leg_id = la.leg_id
         AND r.source_database = la.source_database
-    LEFT JOIN schedule s
-        ON la.shift_assignment_id = s.assignment_id
-        AND la.source_database = s.source_database
     LEFT JOIN pay_periods pp
         ON rt.service_date >= pp.start_date
         AND rt.service_date <= pp.end_date
