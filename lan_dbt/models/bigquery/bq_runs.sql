@@ -74,8 +74,8 @@ runs_enriched AS (
         CASE
             WHEN r.source_database = 'il' THEN 'il'
             WHEN r.source_database = 'mi' THEN 'mi'
-            WHEN r.source_database = 'tn' AND r.market IN ('Memphis', 'Mississippi') THEN 'tn_memphis'
-            WHEN r.source_database = 'tn' AND r.market IN ('Nashville') THEN 'tn_nashville'
+            WHEN r.source_database = 'tn' AND r.market IN ('Memphis', 'Mississippi', 'Event - MEMP', 'Event - MISS') THEN 'tn_memphis'
+            WHEN r.source_database = 'tn' AND r.market IN ('Nashville' 'Event - NASH') THEN 'tn_nashville'
             ELSE r.source_database
         END AS region,
 
