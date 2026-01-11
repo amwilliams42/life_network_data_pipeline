@@ -188,11 +188,6 @@ runs_enriched AS (
         -- Crew assignment (links run to shift)
         la.shift_assignment_id,
         s.assignment_id,
-        s.user_id,
-        s.unit_id,
-        s.unit_name,
-        s.cost_center_id,
-        s.cost_center_name,
 
         -- Flags for filtering
         CASE
