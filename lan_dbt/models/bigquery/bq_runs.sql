@@ -79,10 +79,20 @@ runs_enriched AS (
         CASE
             WHEN r.source_database = 'il' THEN 'il'
             WHEN r.source_database = 'mi' THEN 'mi'
-            WHEN r.source_database = 'tn' AND r.market IN ('Memphis', 'Millington', 'Miss./Ark. County') THEN 'tn_memphis'
-            WHEN r.source_database = 'tn' AND r.market IN ('Nashville', 'Murfreesboro') THEN 'tn_nashville'
+            WHEN r.source_database = 'tn' AND r.market IN ('Memphis', 'Mississippi') THEN 'tn_memphis'
+            WHEN r.source_database = 'tn' AND r.market IN ('Nashville') THEN 'tn_nashville'
             ELSE r.source_database
         END AS region,
+
+        -- Division: Illinois, Michigan, Memphis, Nashville (accomodate IL Stupidity with markets)
+
+        CASE
+            WHEN r.source_database = 'il' THEN 'il'
+            WHEN r.source_database = 'mi' THEN 'mi'
+            WHEN r.source_database = 'tn' AND r.market IN ('Memphis', 'Mississippi') THEN 'tn_memphis'
+            WHEN r.source_database = 'tn' AND r.market IN ('Nashville') THEN 'tn_nashville'
+            ELSE null
+        end as division,
 
         -- Date and time
         rt.service_date,
@@ -172,18 +182,8 @@ runs_enriched AS (
         loc.dropoff_state,
 
         -- Mileage
-        loc.mileage,
-        loc.distance_meters,
-        CASE WHEN loc.mileage > 50 THEN true ELSE false END AS is_long_distance,
-
-        -- Crew assignment (first crew member on the run)
-        la.shift_assignment_id,
-        s.assignment_id,
-        s.user_id,
-        s.unit_id,
-        s.unit_name,
-        s.cost_center_id,
-        s.cost_center_name,
+        r.mileage,
+        CASE WHEN r.mileage > 50 THEN true ELSE false END AS is_long_distance,
 
         -- Flags for filtering
         CASE
