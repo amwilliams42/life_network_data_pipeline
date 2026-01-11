@@ -24,7 +24,7 @@ with {% for dataset in datasets %}
         leg.created as created_timestamp,
         rev.modified as modified_timestamp,
         rft.name as reason_for_transport,
-        r.mileage as mileage
+        rev.mileage as mileage
 FROM
     {{ source(dataset, 'cad_trip_legs') }} as leg
     FULL JOIN {{ source(dataset, 'cad_trip_legs_rev') }} as rev
