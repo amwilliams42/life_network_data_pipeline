@@ -138,6 +138,32 @@ SELECT
         ELSE false
     END AS is_orientation,
 
+    -- Field shift: actual operational shifts (excludes special events and orientation)
+    CASE
+        WHEN (s.cost_center_id, s.source_database) IN (
+            (6, 'il'),   -- EMT Carol Stream
+            (10, 'il'),  -- EMT Chicago
+            (3, 'il'),   -- EMT Skokie
+            (8, 'il'),   -- Paramedic Chicago
+            (4, 'il'),   -- Paramedic Skokie
+            (22, 'mi'),  -- EMT Oakland County
+            (20, 'mi'),  -- EMT Wayne County
+            (11, 'mi'),  -- Lincoln Park Rescue
+            (23, 'mi'),  -- Paramedic Oakland County
+            (21, 'mi'),  -- Paramedic Wayne County
+            (70, 'tn'),  -- Memp - Critical Care
+            (47, 'tn'),  -- Memp - EMT BLS
+            (63, 'tn'),  -- Memp - LDT
+            (52, 'tn'),  -- Memp - Paramedic ALS
+            (48, 'tn'),  -- Miss - EMT BLS
+            (53, 'tn'),  -- Miss - Paramedic ALS
+            (49, 'tn'),  -- Nash - EMT BLS
+            (64, 'tn'),  -- Nash - LDT
+            (54, 'tn')   -- Nash - Paramedic ALS
+        ) THEN true
+        ELSE false
+    END AS is_field_shift,
+
     -- Attendance flags
     CASE
         WHEN s.assignment_status = 'ASSIGNED' AND s.clock_in_time IS NULL
