@@ -185,6 +185,15 @@ runs_enriched AS (
         r.mileage,
         CASE WHEN r.mileage > 50 THEN true ELSE false END AS is_long_distance,
 
+        -- Crew assignment (links run to shift)
+        la.shift_assignment_id,
+        s.assignment_id,
+        s.user_id,
+        s.unit_id,
+        s.unit_name,
+        s.cost_center_id,
+        s.cost_center_name,
+
         -- Flags for filtering
         CASE
             WHEN r.calltype_name IN ('ALS', 'BLS', 'CCT') THEN true
