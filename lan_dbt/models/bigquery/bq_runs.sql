@@ -207,7 +207,7 @@ runs_enriched AS (
 
         CASE
             WHEN rt.pickup_time IS NOT NULL AND rt.at_scene_time IS NOT NULL
-                AND ABS(EXTRACT(EPOCH FROM (rt.pickup_time - rt.at_scene_time)) / 60.0) <= 15
+                AND EXTRACT(EPOCH FROM (rt.pickup_time - rt.at_scene_time)) / 60.0 <= 15
             THEN true
             ELSE false
         END AS is_on_time,
