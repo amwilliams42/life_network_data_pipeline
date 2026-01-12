@@ -206,8 +206,8 @@ runs_enriched AS (
         END AS pickup_variance_minutes,
 
         CASE
-            WHEN rt.pickup_time IS NOT NULL AND rt.appointment_time IS NOT NULL
-                AND ABS(EXTRACT(EPOCH FROM (rt.pickup_time - rt.appointment_time)) / 60.0) <= 15
+            WHEN rt.pickup_time IS NOT NULL AND rt.at_scene_time IS NOT NULL
+                AND ABS(EXTRACT(EPOCH FROM (rt.pickup_time - rt.at_scene_time)) / 60.0) <= 15
             THEN true
             ELSE false
         END AS is_on_time,
