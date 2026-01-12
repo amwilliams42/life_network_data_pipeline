@@ -202,12 +202,12 @@ runs_enriched AS (
         -- On-time calculation (pickup within 15 min of scheduled)
         CASE
             WHEN rt.pickup_time IS NOT NULL AND rt.at_scene_time IS NOT NULL
-            THEN ROUND((EXTRACT(EPOCH FROM (rt.pickup_time - rt.at_scene_time)) / 60.0), 2)
+            THEN ROUND((EXTRACT(EPOCH FROM (rt.at_scene_time - rt.pickup_time)) / 60.0), 2)
         END AS pickup_variance_minutes,
 
         CASE
             WHEN rt.pickup_time IS NOT NULL AND rt.at_scene_time IS NOT NULL
-                AND EXTRACT(EPOCH FROM (rt.pickup_time - rt.at_scene_time)) / 60.0 <= 15
+                AND EXTRACT(EPOCH FROM (rt.at_scene_time - rt.pickup_time)) / 60.0 <= 15
             THEN true
             ELSE false
         END AS is_on_time,
