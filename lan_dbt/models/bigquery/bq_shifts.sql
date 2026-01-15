@@ -16,8 +16,24 @@
 */
 
 WITH
-schedule AS (
+schedule_raw AS (
     SELECT * FROM {{ ref('stg_schedule_full') }}
+),
+
+-- Deduplicate shifts: source database sometimes creates duplicate records
+-- with null clock in/out times. Prefer records with actual clock times.
+schedule AS (
+    SELECT *
+    FROM (
+        SELECT
+            *,
+            ROW_NUMBER() OVER (
+                PARTITION BY assignment_id, source_database
+                ORDER BY clock_in_time NULLS LAST
+            ) AS _dedup_rank
+        FROM schedule_raw
+    )
+    WHERE _dedup_rank = 1
 ),
 
 -- Get shift partners (other crew members on the same unit/shift)
