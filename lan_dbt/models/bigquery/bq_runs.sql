@@ -165,7 +165,7 @@ runs_enriched AS (
         -- Time on Task (assigned to clear, in minutes)
         CASE
             WHEN rt.enroute_time IS NOT NULL AND rt.clear_time IS NOT NULL
-            THEN ROUND((EXTRACT(EPOCH FROM (rt.enroute_time - rt.assigned_time)) / 60.0)::numeric, 2)
+            THEN ROUND((EXTRACT(EPOCH FROM (rt.clear_time - rt.enroute_time)) / 60.0)::numeric, 2)
         END AS time_on_task_minutes,
 
         -- Location details
