@@ -24,6 +24,7 @@ with {% for dataset in datasets %}
         leg.created as created_timestamp,
         rev.modified as modified_timestamp,
         rft.name as reason_for_transport,
+        veh.name as vehicle,
         ROUND(rev.distance_meters * 0.000621371,2) as mileage
 FROM
     {{ source(dataset, 'cad_trip_legs') }} as leg
@@ -36,6 +37,7 @@ FROM
     LEFT JOIN {{ source( dataset, 'cad_sources') }} AS source ON source.id = rev.source_id
     LEFT JOIN {{ source( dataset, 'ibd_subzones') }} as subzones ON rev.response_zone_id = subzones.subzone_id
     LEFT JOIN {{ source( dataset, 'cad_reasons_for_transport') }} as rft on rev.reason_for_transport_id = rft.id
+    LEFT JOIN {{ source( dataset, 'sched_vehicles') }} as veh on veh.id = rev.vehicle_id
     ),
     {%  endfor %}
 

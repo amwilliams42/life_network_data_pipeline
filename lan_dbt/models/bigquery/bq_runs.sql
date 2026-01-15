@@ -120,6 +120,7 @@ runs_enriched AS (
         r.emergency,
         r.trip_status,
         r.last_status_id,
+        r.vehicle,
 
         -- Run outcome (ran/turned/cancelled)
         CASE
