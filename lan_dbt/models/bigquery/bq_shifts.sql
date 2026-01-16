@@ -76,6 +76,7 @@ SELECT
     s.shift_id,
     s.user_id,
     s.source_database,
+    s.assigned_name,
 
     -- Region: split TN into Memphis and Nashville
     CASE
