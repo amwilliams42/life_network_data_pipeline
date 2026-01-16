@@ -100,8 +100,8 @@ with
             stsa.date_line - CURRENT_DATE as days_from_today,
 
             -- Timesheet information
-            ts.time_start as clock_in_time,
-            ts.time_end as clock_out_time,
+            TO_TIMESTAMP(tm.time_start_ts) as clock_in_time,
+            TO_TIMESTAMP(tm.time_end_ts) as clock_out_time,
 
             -- Is training?
             CASE
@@ -115,8 +115,8 @@ with
 
             -- actual time worked in hours
             case
-                when  EXTRACT(EPOCH FROM (ts.time_end - ts.time_start))/3600 < 0 then (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600
-                else EXTRACT(EPOCH FROM (ts.time_end - ts.time_start))/3600
+                when (tm.time_end_ts - tm.time_start_ts) / 3600.0 < 0 then (EXTRACT(EPOCH FROM stsa.end_time) - EXTRACT(EPOCH FROM stsa.start_time)) / 3600
+                else (tm.time_end_ts - tm.time_start_ts) / 3600.0
             end as hours_difference,
 
             -- Pay period flags for easy filtering
@@ -162,6 +162,7 @@ with
         left join stg_timesheet_data as ts
             on ts.assignment_id = stsa.id
             and ts.source_database = '{{ suffix }}'
+        left join {{ source(dataset, 'timesheet') }} as tm on tm.shift_assignment_id = stsa.id
         left join {{ source(dataset, 'sched_earning_codes') }} as ec
                 on ec.id = stsa.earning_code_id
         where stsa.deleted = '0'
