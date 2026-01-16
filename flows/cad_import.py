@@ -102,6 +102,11 @@ def get_reference_tables(source_name: str) -> list:
         table="epcr_v2_cad_legs"
     )
 
+    epcr_v2_runs = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="epcr_v2_runs"
+    )
+
     cad_trip_leg_shift_assignments = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_leg_shift_assignments"
@@ -117,7 +122,7 @@ def get_reference_tables(source_name: str) -> list:
         table="cad_lost_call_status",
     )
 
-    return [epcr_cad_legs, cad_trip_leg_shift_assignments, cancel_reasons, lost_call_reasons]
+    return [epcr_cad_legs, epcr_v2_runs, cad_trip_leg_shift_assignments, cancel_reasons, lost_call_reasons]
 
 
 @flow
