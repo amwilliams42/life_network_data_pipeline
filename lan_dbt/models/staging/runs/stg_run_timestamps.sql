@@ -92,7 +92,7 @@ with {% for dataset in datasets %}
             
             -- Response Time (Call to Scene)
             CASE 
-                WHEN rev.at_scene_time IS NOT NULL AND rev.call_started_date IS NOT NULL
+                WHEN rev.at_scene_time IS NOT NULL AND rev.acknowledged_time IS NOT NULL
                 THEN EXTRACT(EPOCH FROM (rev.at_scene_time - rev.call_started_date))/60.0
             END as response_time_minutes,
 
