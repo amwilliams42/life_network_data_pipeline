@@ -303,7 +303,7 @@ deployments:
   # BigQuery Export
   - name: BigQuery Export
     description: Export dbt bigquery schema models to Google BigQuery for PowerBI
-    schedule: *four_hour_schedule
+    schedule: *one_hour_schedule
     entrypoint: flows/bigquery_export.py:export_all_to_bigquery
     work_pool: *default_work_pool
     tags: *global_tags
