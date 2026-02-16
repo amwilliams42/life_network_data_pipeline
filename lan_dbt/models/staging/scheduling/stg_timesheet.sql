@@ -8,12 +8,10 @@
     2. Orphan timesheet punches that don't match any scheduled shift
     3. Multiple timesheet entries per shift (e.g., partial shifts, cost center switches)
 
-    Key logic:
-    - Direct match: timesheet.shift_assignment_id = assignment.id
-    - Fuzzy match: No shift_assignment_id, but same user, within 1 hour of start,
-                   and timesheet start before shift end
-    - effective_clock_out: Uses actual clock out if available, otherwise scheduled end time
-                          (for "still clocked in" scenarios)
+    Matching logic:
+    - Direct match: timesheet.shift_assignment_id = assignment.id AND same user
+    - Fuzzy match: Same user + timesheet falls within shift window (within 1 hour of start, or during shift)
+      This catches cases where shift_assignment_id is NULL, wrong, or points to a different user's assignment
 
     Timezone conversion:
     - IL and TN: America/Chicago (Central Time)
@@ -86,27 +84,21 @@ WITH
     INNER JOIN {{ source(dataset, 'users') }} AS users
         ON users.user_id = stsa.user_id
     LEFT JOIN {{ source(dataset, 'timesheet') }} AS ts
-        ON (
-            -- Direct match via shift_assignment_id
-            (
-                stsa.id = ts.shift_assignment_id
-                AND ts.time_user_id = stsa.user_id
-            )
+        ON ts.time_user_id = stsa.user_id
+        AND (
+            -- Direct match: shift_assignment_id points to this assignment
+            stsa.id = ts.shift_assignment_id
             OR
-            -- Fuzzy match: no assignment ID, but within 1 hour of start and same user
-            -- Also match if timesheet starts DURING the shift (for mid-shift clock-ins)
+            -- Fuzzy match: timesheet falls within shift window
+            -- This catches wrong/null shift_assignment_id, or timesheets linked to open/other-user assignments
             (
-                ts.shift_assignment_id IS NULL
-                AND ts.time_user_id = stsa.user_id
-                AND (
-                    -- Within 1 hour of shift start
-                    ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
-                    OR
-                    -- Timesheet starts during the shift window
-                    (
-                        ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
-                        AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
-                    )
+                -- Within 1 hour of shift start
+                ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
+                OR
+                -- Timesheet starts during the shift window
+                (
+                    ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
+                    AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
                 )
             )
         )
@@ -116,7 +108,7 @@ WITH
         AND stsa.user_id IS NOT NULL
 ),
 
--- Orphan timesheets: punches that don't match any assignment
+-- Orphan timesheets: punches that don't match any assignment for that user
 {{ suffix }}_orphan_timesheets AS (
     SELECT
         '{{ suffix }}' AS source_database,
@@ -160,29 +152,23 @@ WITH
     INNER JOIN {{ source(dataset, 'users') }} AS users
         ON users.user_id = ts.time_user_id
     WHERE NOT EXISTS (
-        -- Exclude timesheets that already matched an assignment
+        -- Exclude timesheets that match any assignment for this user (by time window)
         SELECT 1
         FROM {{ source(dataset, 'sched_template_shift_assignments') }} AS stsa
         WHERE stsa.deleted = '0'
             AND stsa.published = 'true'
             AND stsa.type = 'Regular'
-            AND stsa.user_id IS NOT NULL
+            AND stsa.user_id = ts.time_user_id
             AND (
                 -- Direct match
-                (stsa.id = ts.shift_assignment_id AND ts.time_user_id = stsa.user_id)
+                stsa.id = ts.shift_assignment_id
                 OR
-                -- Fuzzy match (same expanded criteria as above)
+                -- Fuzzy match by time window
+                ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
+                OR
                 (
-                    ts.shift_assignment_id IS NULL
-                    AND ts.time_user_id = stsa.user_id
-                    AND (
-                        ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
-                        OR
-                        (
-                            ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
-                            AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
-                        )
-                    )
+                    ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
+                    AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
                 )
             )
     )
