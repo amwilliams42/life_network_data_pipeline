@@ -20,15 +20,16 @@ schedule_raw AS (
     SELECT * FROM {{ ref('stg_schedule_full') }}
 ),
 
--- Deduplicate shifts: source database sometimes creates duplicate records
--- with null clock in/out times. Prefer records with actual clock times.
+-- Deduplicate shifts: preserve each unique timesheet entry (time_id).
+-- An assignment can have multiple timesheet punches (partial shifts, breaks, etc.).
+-- For assignments without timesheets, ensure exactly one row.
 schedule AS (
     SELECT *
     FROM (
         SELECT
             *,
             ROW_NUMBER() OVER (
-                PARTITION BY assignment_id, source_database
+                PARTITION BY assignment_id, source_database, COALESCE(time_id, -1)
                 ORDER BY clock_in_time NULLS LAST
             ) AS _dedup_rank
         FROM schedule_raw
@@ -73,6 +74,7 @@ shift_staffing AS (
 SELECT
     -- Primary identifiers
     s.assignment_id,
+    s.time_id,
     s.shift_id,
     s.user_id,
     s.source_database,

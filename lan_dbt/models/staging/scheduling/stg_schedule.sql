@@ -109,6 +109,7 @@ stg_timesheet_data AS (
         stsa.date_line - CURRENT_DATE AS days_from_today,
 
         -- Timesheet information
+        ts.time_id,
         ts.clock_in_time,
         ts.clock_out_time,
         ts.effective_clock_out,

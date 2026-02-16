@@ -6,6 +6,7 @@
     This model captures:
     1. Scheduled shifts with matching timesheet punches (direct or fuzzy match)
     2. Orphan timesheet punches that don't match any scheduled shift
+    3. Multiple timesheet entries per shift (e.g., partial shifts, cost center switches)
 
     Key logic:
     - Direct match: timesheet.shift_assignment_id = assignment.id
@@ -13,6 +14,10 @@
                    and timesheet start before shift end
     - effective_clock_out: Uses actual clock out if available, otherwise scheduled end time
                           (for "still clocked in" scenarios)
+
+    Timezone conversion:
+    - IL and TN: America/Chicago (Central Time)
+    - MI: America/Detroit (Eastern Time)
 
     No date filtering - contains all historical data.
     Downstream models (stg_schedule, stg_schedule_full) apply date filters as needed.
@@ -23,8 +28,14 @@
 WITH
 {% for dataset in datasets %}
 {% set suffix=dataset.split('_')[1] %}
+{% if suffix == 'mi' %}
+{% set local_tz = 'America/Detroit' %}
+{% else %}
+{% set local_tz = 'America/Chicago' %}
+{% endif %}
 
 -- Assignments with matching timesheets (direct or fuzzy match)
+-- Note: An assignment can have MULTIPLE timesheet entries (partial shifts, breaks, etc.)
 {{ suffix }}_assignment_timesheets AS (
     SELECT
         '{{ suffix }}' AS source_database,
@@ -32,7 +43,7 @@ WITH
         stsa.user_id,
         users.username,
 
-        -- Scheduled times
+        -- Scheduled times (already in local time from source)
         stsa.start_time AS scheduled_start,
         stsa.end_time AS scheduled_end,
         stsa.date_line,
@@ -40,20 +51,20 @@ WITH
         -- Cost center for downstream filtering
         stsa.cost_center_id,
 
-        -- Timesheet data
+        -- Timesheet data with timezone conversion (UTC -> local)
         ts.time_id,
         ts.time_user_id,
-        TO_TIMESTAMP(ts.time_start_ts) AS clock_in_time,
+        (TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
         CASE
             WHEN ts.time_end_ts::bigint = 0 THEN NULL
-            ELSE TO_TIMESTAMP(ts.time_end_ts)
+            ELSE (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
         END AS clock_out_time,
         ts.time_start_ts,
         ts.time_end_ts,
 
         -- Effective clock out: actual if clocked out, scheduled end if still clocked in
         CASE
-            WHEN ts.time_end_ts::bigint != 0 THEN TO_TIMESTAMP(ts.time_end_ts)
+            WHEN ts.time_end_ts::bigint != 0 THEN (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
             WHEN ts.time_id IS NOT NULL THEN stsa.end_time  -- Still clocked in, use scheduled end
             ELSE NULL  -- No timesheet record
         END AS effective_clock_out,
@@ -82,12 +93,21 @@ WITH
                 AND ts.time_user_id = stsa.user_id
             )
             OR
-            -- Fuzzy match: no assignment ID, but within 1 hour and same user
+            -- Fuzzy match: no assignment ID, but within 1 hour of start and same user
+            -- Also match if timesheet starts DURING the shift (for mid-shift clock-ins)
             (
                 ts.shift_assignment_id IS NULL
-                AND ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
                 AND ts.time_user_id = stsa.user_id
-                AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
+                AND (
+                    -- Within 1 hour of shift start
+                    ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
+                    OR
+                    -- Timesheet starts during the shift window
+                    (
+                        ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
+                        AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
+                    )
+                )
             )
         )
     WHERE stsa.deleted = '0'
@@ -107,25 +127,25 @@ WITH
         -- No scheduled times for orphans
         NULL::timestamp AS scheduled_start,
         NULL::timestamp AS scheduled_end,
-        TO_TIMESTAMP(ts.time_start_ts)::date AS date_line,
+        ((TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}')::date AS date_line,
 
         -- No cost center for orphans
         NULL::bigint AS cost_center_id,
 
-        -- Timesheet data
+        -- Timesheet data with timezone conversion
         ts.time_id,
         ts.time_user_id,
-        TO_TIMESTAMP(ts.time_start_ts) AS clock_in_time,
+        (TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
         CASE
             WHEN ts.time_end_ts::bigint = 0 THEN NULL
-            ELSE TO_TIMESTAMP(ts.time_end_ts)
+            ELSE (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
         END AS clock_out_time,
         ts.time_start_ts,
         ts.time_end_ts,
 
         -- Effective clock out: for orphans still clocked in, use NULL (no scheduled end to fall back on)
         CASE
-            WHEN ts.time_end_ts::bigint != 0 THEN TO_TIMESTAMP(ts.time_end_ts)
+            WHEN ts.time_end_ts::bigint != 0 THEN (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
             ELSE NULL  -- Still clocked in with no schedule to reference
         END AS effective_clock_out,
 
@@ -151,12 +171,18 @@ WITH
                 -- Direct match
                 (stsa.id = ts.shift_assignment_id AND ts.time_user_id = stsa.user_id)
                 OR
-                -- Fuzzy match
+                -- Fuzzy match (same expanded criteria as above)
                 (
                     ts.shift_assignment_id IS NULL
-                    AND ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
                     AND ts.time_user_id = stsa.user_id
-                    AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
+                    AND (
+                        ABS(EXTRACT(EPOCH FROM stsa.start_time) - ts.time_start_ts::double precision) < 3600
+                        OR
+                        (
+                            ts.time_start_ts::double precision >= EXTRACT(EPOCH FROM stsa.start_time)
+                            AND ts.time_start_ts::double precision < EXTRACT(EPOCH FROM stsa.end_time)
+                        )
+                    )
                 )
             )
     )
