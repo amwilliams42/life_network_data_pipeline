@@ -49,20 +49,20 @@ WITH
         -- Cost center for downstream filtering
         stsa.cost_center_id,
 
-        -- Timesheet data with timezone conversion (UTC -> local)
+        -- Timesheet data with timezone conversion (Unix timestamp is UTC, convert to local)
         ts.time_id,
         ts.time_user_id,
-        (TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
+        TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
         CASE
             WHEN ts.time_end_ts::bigint = 0 THEN NULL
-            ELSE (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
+            ELSE TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE '{{ local_tz }}'
         END AS clock_out_time,
         ts.time_start_ts,
         ts.time_end_ts,
 
         -- Effective clock out: actual if clocked out, scheduled end if still clocked in
         CASE
-            WHEN ts.time_end_ts::bigint != 0 THEN (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
+            WHEN ts.time_end_ts::bigint != 0 THEN TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE '{{ local_tz }}'
             WHEN ts.time_id IS NOT NULL THEN stsa.end_time  -- Still clocked in, use scheduled end
             ELSE NULL  -- No timesheet record
         END AS effective_clock_out,
@@ -119,25 +119,25 @@ WITH
         -- No scheduled times for orphans
         NULL::timestamp AS scheduled_start,
         NULL::timestamp AS scheduled_end,
-        ((TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}')::date AS date_line,
+        (TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE '{{ local_tz }}')::date AS date_line,
 
         -- No cost center for orphans
         NULL::bigint AS cost_center_id,
 
-        -- Timesheet data with timezone conversion
+        -- Timesheet data with timezone conversion (Unix timestamp is UTC, convert to local)
         ts.time_id,
         ts.time_user_id,
-        (TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
+        TO_TIMESTAMP(ts.time_start_ts) AT TIME ZONE '{{ local_tz }}' AS clock_in_time,
         CASE
             WHEN ts.time_end_ts::bigint = 0 THEN NULL
-            ELSE (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
+            ELSE TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE '{{ local_tz }}'
         END AS clock_out_time,
         ts.time_start_ts,
         ts.time_end_ts,
 
         -- Effective clock out: for orphans still clocked in, use NULL (no scheduled end to fall back on)
         CASE
-            WHEN ts.time_end_ts::bigint != 0 THEN (TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE 'UTC') AT TIME ZONE '{{ local_tz }}'
+            WHEN ts.time_end_ts::bigint != 0 THEN TO_TIMESTAMP(ts.time_end_ts) AT TIME ZONE '{{ local_tz }}'
             ELSE NULL  -- Still clocked in with no schedule to reference
         END AS effective_clock_out,
 
