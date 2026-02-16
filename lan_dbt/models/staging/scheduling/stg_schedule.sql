@@ -80,6 +80,7 @@ with
             stsa.schedule_type,
             stsa.comments,
             stsa.earning_code_id,
+            ec.description as earning_code,
             
             -- Pay period information from seed
             pp.pay_period_year,

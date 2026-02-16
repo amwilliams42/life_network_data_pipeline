@@ -77,6 +77,7 @@ SELECT
     s.user_id,
     s.source_database,
     s.assigned_name,
+    s.earning_code,
 
     -- Region: split TN into Memphis and Nashville
     CASE
