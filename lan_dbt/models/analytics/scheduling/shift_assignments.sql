@@ -35,7 +35,7 @@ WITH
             COALESCE(s.assigned_name, 'OPEN') AS crew_member_name,
             s.scheduled_hours,
             s.open_hours,
-            s.hours_difference AS worked_hours,
+            s.hours_worked AS worked_hours,
             s.source_database,
             s.cost_center_id,
             s.cost_center_name,

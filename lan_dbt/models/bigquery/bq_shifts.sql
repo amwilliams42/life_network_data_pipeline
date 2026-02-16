@@ -117,12 +117,19 @@ SELECT
     -- Actual clock in/out times
     s.clock_in_time,
     s.clock_out_time,
-    ROUND(s.hours_difference::numeric, 2) AS actual_hours_worked,
+    s.effective_clock_out,
+    ROUND(s.hours_worked::numeric, 2) AS actual_hours_worked,
+
+    -- Timesheet status flags
+    s.has_timesheet,
+    s.is_clocked_in,
+    s.is_clocked_out,
+    s.timesheet_match_type,
 
     -- Variance
     CASE
-        WHEN s.hours_difference IS NOT NULL
-        THEN ROUND((s.hours_difference - s.scheduled_hours)::numeric, 2)
+        WHEN s.hours_worked IS NOT NULL
+        THEN ROUND((s.hours_worked - s.scheduled_hours)::numeric, 2)
         ELSE NULL
     END AS hours_variance,
 
@@ -192,8 +199,8 @@ SELECT
 
     CASE
         WHEN s.assignment_status = 'ASSIGNED'
-            AND s.hours_difference IS NOT NULL
-            AND s.hours_difference < s.scheduled_hours * 0.9
+            AND s.hours_worked IS NOT NULL
+            AND s.hours_worked < s.scheduled_hours * 0.9
         THEN true
         ELSE false
     END AS is_partial_shift,

@@ -111,7 +111,7 @@ with
             s.scheduled_hours,
             s.clock_in_time,
             s.clock_out_time,
-            s.hours_difference as actual_hours_worked,
+            s.hours_worked as actual_hours_worked,
 
             -- Unit information
             s.unit_id,

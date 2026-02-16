@@ -71,7 +71,7 @@ WITH
             is_training,
             ROUND(SUM(scheduled_hours), 2) AS scheduled_hours,
             ROUND(SUM(open_hours), 2) AS open_hours,
-            ROUND(SUM(COALESCE(hours_difference, 0)), 2) AS worked_hours
+            ROUND(SUM(COALESCE(hours_worked, 0)), 2) AS worked_hours
         FROM {{ ref('stg_schedule') }}
         WHERE cost_center_id IS NOT NULL
         GROUP BY

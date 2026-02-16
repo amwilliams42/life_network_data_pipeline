@@ -32,7 +32,7 @@ with
             user_id,
             assigned_name,
             sum(scheduled_hours) as total_scheduled_hours,
-            sum(hours_difference) as total_worked_hours
+            sum(hours_worked) as total_worked_hours
         from prev_week_schedule
         where assignment_status = 'ASSIGNED'
             and user_id is not null
@@ -103,7 +103,7 @@ with
             round(sum(scheduled_hours)::numeric, 1) as total_scheduled_hours,
             round(sum(scheduled_hours) filter (where assignment_status = 'ASSIGNED')::numeric, 1) as scheduled_hours_filled,
             round(sum(open_hours)::numeric, 1) as scheduled_hours_open,
-            round(sum(hours_difference) filter (where assignment_status = 'ASSIGNED')::numeric, 1) as actual_hours_worked,
+            round(sum(hours_worked) filter (where assignment_status = 'ASSIGNED')::numeric, 1) as actual_hours_worked,
 
             -- Shift counts by day of week
             count(distinct assignment_id) filter (where day_of_week = 0) as sunday_shifts,

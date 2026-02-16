@@ -31,7 +31,7 @@ with
             source_database,
             user_id,
             sum(scheduled_hours) as employee_total_scheduled_hours,
-            sum(hours_difference) as employee_total_worked_hours,
+            sum(hours_worked) as employee_total_worked_hours,
             count(*) as employee_total_shifts
         from prev_week_schedule
         where assignment_status = 'ASSIGNED'
@@ -120,7 +120,7 @@ select
     -- Actual time worked
     pws.clock_in_time,
     pws.clock_out_time,
-    pws.hours_difference as actual_hours_worked,
+    pws.hours_worked as actual_hours_worked,
 
     -- Shift status indicators
     case
@@ -135,8 +135,8 @@ select
 
     case
         when pws.assignment_status = 'ASSIGNED'
-            and pws.hours_difference is not null
-            and pws.hours_difference < pws.scheduled_hours * 0.9  -- Worked less than 90% of scheduled
+            and pws.hours_worked is not null
+            and pws.hours_worked < pws.scheduled_hours * 0.9  -- Worked less than 90% of scheduled
         then true
         else false
     end as is_callout_partial,
