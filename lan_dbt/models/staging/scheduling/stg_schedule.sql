@@ -160,7 +160,6 @@ with
         left join {{ source(dataset, 'sched_earning_codes') }} as ec
                 on ec.id = stsa.earning_code_id
         where stsa.deleted = '0' 
-          and (stsa.earning_code_id = 1 or ec.description like '%Regular%')
           and stsa.date_line >= CURRENT_DATE - INTERVAL '30 days'  -- Keep recent history and future
     ){% if not loop.last %},{% endif %}
 {% endfor %}
