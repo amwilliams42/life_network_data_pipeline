@@ -25,6 +25,7 @@ tables: list[tuple[str, str | None, list[str] | None]] = [
     ('sched_earning_codes', None, None),
     ('cad_reasons_for_transport', None, None),
     ('user_job_titles', None, None),
+    ('sched_pay_periods', None, None),
 ]
 
 @task
