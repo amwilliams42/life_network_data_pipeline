@@ -46,10 +46,10 @@ with
     schedule_raw as (
         select
             s.*,
-            cpp.pay_period_id,
-            cpp.pay_period_number,
-            cpp.pay_period_start,
-            cpp.pay_period_end
+            cpp.pay_period_id as report_pay_period_id,
+            cpp.pay_period_number as report_pay_period_number,
+            cpp.pay_period_start as report_pay_period_start,
+            cpp.pay_period_end as report_pay_period_end
         from {{ ref('stg_schedule') }} s
         inner join cost_center_list cc
             on s.cost_center_id = cc.cost_center_id
@@ -78,7 +78,7 @@ with
         select
             *,
             case
-                when date_line < pay_period_start + 7 then 1
+                when date_line < report_pay_period_start + 7 then 1
                 else 2
             end as pay_period_week
         from schedule
@@ -208,10 +208,10 @@ with
 -- Main report output
 select
     -- Pay period information
-    sw.pay_period_id,
-    sw.pay_period_number,
-    sw.pay_period_start,
-    sw.pay_period_end,
+    sw.report_pay_period_id as pay_period_id,
+    sw.report_pay_period_number as pay_period_number,
+    sw.report_pay_period_start as pay_period_start,
+    sw.report_pay_period_end as pay_period_end,
     sw.pay_period_week,
 
     -- Date and market organization
