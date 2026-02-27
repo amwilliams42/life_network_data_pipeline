@@ -43,6 +43,8 @@ table_definitions: &common_tables
   - name: sched_earning_codes
   - name: cad_reasons_for_transport
   - name: sched_vehicles
+  - name: sched_pay_periods
+    description: "Pay period definitions with start/end dates and closure status"
 
 # Source definitions using the common template
 sources:
