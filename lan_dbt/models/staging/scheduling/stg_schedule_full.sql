@@ -97,8 +97,8 @@ stg_timesheet_data AS (
         stsa.earning_code_id,
         ec.description AS earning_code,
 
-        -- Pay period information from seed
-        pp.pay_period_year,
+        -- Pay period information from source-specific pay periods
+        EXTRACT(YEAR FROM pp.start_date)::int AS pay_period_year,
         pp.pay_period_number,
         pp.start_date AS pay_period_start,
         pp.end_date AS pay_period_end,
@@ -138,16 +138,16 @@ stg_timesheet_data AS (
             ELSE NULL
         END AS hours_worked,
 
-        -- Pay period flags for easy filtering
+        -- Pay period flags for easy filtering (source-specific)
         CASE
-            WHEN stsa.date_line >= (SELECT start_date FROM {{ ref('pay_periods') }} WHERE start_date <= CURRENT_DATE ORDER BY start_date DESC LIMIT 1)
-                 AND stsa.date_line <= (SELECT end_date FROM {{ ref('pay_periods') }} WHERE start_date <= CURRENT_DATE ORDER BY start_date DESC LIMIT 1)
+            WHEN stsa.date_line >= (SELECT start_date FROM {{ ref('stg_pay_periods') }} WHERE source_database = '{{ suffix }}' AND start_date <= CURRENT_DATE ORDER BY start_date DESC LIMIT 1)
+                 AND stsa.date_line <= (SELECT end_date FROM {{ ref('stg_pay_periods') }} WHERE source_database = '{{ suffix }}' AND start_date <= CURRENT_DATE ORDER BY start_date DESC LIMIT 1)
             THEN TRUE ELSE FALSE
         END AS is_current_pay_period,
 
         CASE
-            WHEN stsa.date_line >= (SELECT start_date FROM {{ ref('pay_periods') }} WHERE start_date > CURRENT_DATE ORDER BY start_date ASC LIMIT 1)
-                 AND stsa.date_line <= (SELECT end_date FROM {{ ref('pay_periods') }} WHERE start_date > CURRENT_DATE ORDER BY start_date ASC LIMIT 1)
+            WHEN stsa.date_line >= (SELECT start_date FROM {{ ref('stg_pay_periods') }} WHERE source_database = '{{ suffix }}' AND start_date > CURRENT_DATE ORDER BY start_date ASC LIMIT 1)
+                 AND stsa.date_line <= (SELECT end_date FROM {{ ref('stg_pay_periods') }} WHERE source_database = '{{ suffix }}' AND start_date > CURRENT_DATE ORDER BY start_date ASC LIMIT 1)
             THEN TRUE ELSE FALSE
         END AS is_next_pay_period,
 
@@ -175,8 +175,9 @@ stg_timesheet_data AS (
         ON uct.id = sup.certification_template_id
     LEFT JOIN {{ source(dataset,'cost_centers') }} AS cc
         ON cc.id = stsa.cost_center_id
-    LEFT JOIN {{ ref('pay_periods') }} AS pp
-        ON stsa.date_line >= pp.start_date
+    LEFT JOIN {{ ref('stg_pay_periods') }} AS pp
+        ON pp.source_database = '{{ suffix }}'
+        AND stsa.date_line >= pp.start_date
         AND stsa.date_line <= pp.end_date
     LEFT JOIN stg_timesheet_data AS ts
         ON ts.assignment_id = stsa.id
