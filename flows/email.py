@@ -51,6 +51,7 @@ def send_email(
     body: str,
     attachments: list[Path | str] | None = None,
     email_block_name: str = "smtp-credentials",
+    email_from: str | None = None,
 ) -> bool:
     """
     Send an email with optional attachments.
@@ -61,6 +62,8 @@ def send_email(
         body: Email body text.
         attachments: Optional list of file paths to attach.
         email_block_name: Name of the EmailServerCredentials block.
+        email_from: Optional sender email address. If not provided,
+                   uses the username from credentials.
 
     Returns:
         True if email sent successfully, False otherwise.
@@ -78,12 +81,17 @@ def send_email(
 
     try:
         credentials = EmailServerCredentials.load(email_block_name)
+        
+        # Use provided email_from, or fall back to credentials username
+        sender = email_from or credentials.username
+        logger.info(f"Sending email from {sender} to {recipients}")
 
         email_send_message(
             email_server_credentials=credentials,
             subject=subject,
             msg=body,
             email_to=recipients,
+            email_from=sender,
             attachments=attachment_paths,
         )
 
@@ -202,8 +210,21 @@ def send_test_email(
     """
     import datetime
 
+    from prefect_email import EmailServerCredentials
+
     logger = get_run_logger()
     logger.info(f"Sending test email to {to}")
+
+    # Log SMTP configuration for debugging
+    try:
+        creds = EmailServerCredentials.load(email_block_name)
+        logger.info(f"SMTP Server: {creds.smtp_server}")
+        logger.info(f"SMTP Port: {creds.smtp_port}")
+        logger.info(f"SMTP Type: {creds.smtp_type}")
+        logger.info(f"Username: {creds.username}")
+    except Exception as e:
+        logger.error(f"Failed to load email credentials: {e}")
+        return False
 
     if body is None:
         body = f"""
@@ -211,6 +232,9 @@ This is a test email from Prefect.
 
 Sent at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Email block: {email_block_name}
+SMTP Server: {creds.smtp_server}
+SMTP Port: {creds.smtp_port}
+SMTP Type: {creds.smtp_type}
 
 If you received this email, your SMTP configuration is working correctly.
 """

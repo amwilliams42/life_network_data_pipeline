@@ -27,6 +27,12 @@ from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
 
 from flows.email import get_email_recipients, send_report_email
+from flows.generate_pay_period_schedule import (
+    create_summary_sheet,
+    create_daily_sheet,
+    create_comparison_summary_sheet,
+    create_comparison_daily_sheet,
+)
 
 # Database connection - loaded from Prefect secret
 DB_CONFIG_SECRET_NAME = "warehouse-db-config"
@@ -227,10 +233,6 @@ def save_report_to_database(
 @task
 def build_schedule_workbook(shifts: list[dict], pp_info: dict) -> Workbook:
     """Build the schedule report workbook."""
-    from generate_pay_period_schedule import (
-        create_summary_sheet,
-        create_daily_sheet,
-    )
     from collections import defaultdict
 
     logger = get_run_logger()
@@ -257,10 +259,6 @@ def build_schedule_workbook(shifts: list[dict], pp_info: dict) -> Workbook:
 @task
 def build_comparison_workbook(shifts: list[dict], pp_info: dict) -> Workbook:
     """Build the comparison report workbook."""
-    from generate_pay_period_schedule import (
-        create_comparison_summary_sheet,
-        create_comparison_daily_sheet,
-    )
     from collections import defaultdict
 
     logger = get_run_logger()
