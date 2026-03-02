@@ -9,7 +9,8 @@ SELECT
     id AS pay_period_id,
     number AS pay_period_number,
     start::date AS start_date,
-    "end"::date AS end_date,
+    -- Source stores exclusive end date (day after last day), so subtract 1
+    ("end"::date - 1) AS end_date,
     weeks_in_payperiod,
     closed = 1 AS is_closed,
     date_closed,
