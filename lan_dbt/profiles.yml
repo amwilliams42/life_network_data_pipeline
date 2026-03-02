@@ -19,4 +19,12 @@ lan_dbt:
       threads: 1
       type: postgres
       user: user
-
+    prod-local:
+      type: postgres
+      host: dataserver
+      user: "{{ env_var('WAREHOUSE_USER') }}"
+      password: "{{ env_var('WAREHOUSE_PASS') }}"
+      port: 5433
+      dbname: warehouse
+      threads: 8
+      schema: staging

@@ -318,3 +318,33 @@ deployments:
       start_date: "2024-01-01"
       end_date: "2024-01-07"
     schedule: []
+
+  # Test Email (manual trigger only)
+  - name: Test Email
+    description: Send a test email to verify SMTP configuration
+    entrypoint: flows/email.py:send_test_email
+    work_pool: *default_work_pool
+    tags: *test_tags
+    schedule: []
+
+  # Schedule Report - One Off (manual trigger only)
+  - name: Schedule Report - One Off
+    description: Generate schedule report for a specific market and pay period
+    entrypoint: flows/schedule_reports.py:run_schedule_report
+    work_pool: *default_work_pool
+    tags: *global_tags
+    parameters:
+      region: "tn_memphis"
+      date: "2026-03-01"
+    schedule: []
+
+  # Comparison Report - One Off (manual trigger only)
+  - name: Comparison Report - One Off
+    description: Generate comparison report for a specific market and pay period
+    entrypoint: flows/schedule_reports.py:run_comparison_report
+    work_pool: *default_work_pool
+    tags: *global_tags
+    parameters:
+      region: "tn_memphis"
+      date: "2026-03-01"
+    schedule: []
