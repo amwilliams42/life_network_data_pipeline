@@ -31,37 +31,36 @@ with
         ) as t(cost_center_id, source_database)
     ),
 
-    -- Get the next pay period for each source database
-    next_pay_periods as (
-        select distinct on (source_database)
+    -- Get all pay periods for each source database
+    pay_periods as (
+        select
             source_database,
             pay_period_id,
             pay_period_number,
             start_date as pay_period_start,
             end_date as pay_period_end
         from {{ ref('stg_pay_periods') }}
-        where start_date > current_date
-        order by source_database, start_date asc
     ),
 
     schedule_raw as (
         select
             s.*,
-            npp.pay_period_id as report_pay_period_id,
-            npp.pay_period_number as report_pay_period_number,
-            npp.pay_period_start as report_pay_period_start,
-            npp.pay_period_end as report_pay_period_end
+            pp.pay_period_id as report_pay_period_id,
+            pp.pay_period_number as report_pay_period_number,
+            pp.pay_period_start as report_pay_period_start,
+            pp.pay_period_end as report_pay_period_end
         from {{ ref('stg_schedule') }} s
         inner join cost_center_list cc
             on s.cost_center_id = cc.cost_center_id
             and s.source_database = cc.source_database
-        inner join next_pay_periods npp
-            on s.source_database = npp.source_database
-        where s.date_line >= npp.pay_period_start
-            and s.date_line <= npp.pay_period_end
+        inner join pay_periods pp
+            on s.source_database = pp.source_database
+            and s.date_line >= pp.pay_period_start
+            and s.date_line <= pp.pay_period_end
+        where
             -- Include both training and non-training shifts
             -- BUT exclude shifts that are both open AND training
-            and not (s.assignment_status = 'OPEN' and s.is_training = true)
+            not (s.assignment_status = 'OPEN' and s.is_training = true)
             -- Exclude shifts with no unit
             and s.unit_name is not null
     ),
