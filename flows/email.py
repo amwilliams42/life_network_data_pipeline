@@ -77,24 +77,37 @@ def send_email(
     from email import encoders
 
     logger = get_run_logger()
+    
+    logger.info(f"send_email called:")
+    logger.info(f"  recipients: {recipients}")
+    logger.info(f"  subject: {subject}")
+    logger.info(f"  attachments: {attachments}")
+    logger.info(f"  email_block_name: {email_block_name}")
 
     if not recipients:
         logger.warning("No recipients specified, skipping email")
         return False
 
     try:
+        logger.info(f"Loading credentials from block: {email_block_name}")
         credentials = EmailServerCredentials.load(email_block_name)
         
         sender = email_from or credentials.username
-        logger.info(f"Sending email from {sender} to {recipients}")
+        logger.info(f"Sender: {sender}")
+        logger.info(f"SMTP Server: {credentials.smtp_server}")
+        logger.info(f"SMTP Port: {credentials.smtp_port}")
+        logger.info(f"SMTP Type: {credentials.smtp_type}")
 
         # Build the email message
+        logger.info("Building email message...")
         if attachments:
+            logger.info(f"Building multipart message with {len(attachments)} attachment(s)")
             msg = MIMEMultipart()
             msg.attach(MIMEText(body, "plain"))
             
             for attachment_path in attachments:
                 path = Path(attachment_path)
+                logger.info(f"Attaching file: {path} (exists: {path.exists()}, size: {path.stat().st_size if path.exists() else 'N/A'} bytes)")
                 with open(path, "rb") as f:
                     part = MIMEBase("application", "octet-stream")
                     part.set_payload(f.read())
@@ -105,12 +118,14 @@ def send_email(
                 )
                 msg.attach(part)
         else:
+            logger.info("Building simple message (no attachments)")
             msg = EmailMessage()
             msg.set_content(body)
 
         msg["Subject"] = subject
         msg["From"] = sender
         msg["To"] = ", ".join(recipients)
+        logger.info(f"Message headers set: From={sender}, To={msg['To']}, Subject={subject}")
 
         # Create SSL context and send
         context = ssl.create_default_context()
@@ -119,21 +134,28 @@ def send_email(
         logger.info(f"Connecting to {credentials.smtp_server}:{credentials.smtp_port} ({smtp_type})")
         
         if "SSL" in smtp_type:
+            logger.info("Using SMTP_SSL connection...")
             with smtplib.SMTP_SSL(
                 credentials.smtp_server, 
                 credentials.smtp_port, 
                 context=context
             ) as server:
+                logger.info("Connected, logging in...")
                 server.login(credentials.username, credentials.password.get_secret_value())
+                logger.info("Logged in, sending message...")
                 server.send_message(msg)
-                logger.info(f"Sent email to {len(recipients)} recipients: {subject}")
+                logger.info(f"Message sent successfully to {len(recipients)} recipients: {subject}")
         else:
             # STARTTLS
+            logger.info("Using SMTP with STARTTLS...")
             with smtplib.SMTP(credentials.smtp_server, credentials.smtp_port) as server:
+                logger.info("Connected, starting TLS...")
                 server.starttls(context=context)
+                logger.info("TLS started, logging in...")
                 server.login(credentials.username, credentials.password.get_secret_value())
+                logger.info("Logged in, sending message...")
                 server.send_message(msg)
-                logger.info(f"Sent email to {len(recipients)} recipients: {subject}")
+                logger.info(f"Message sent successfully to {len(recipients)} recipients: {subject}")
         
         return True
 
@@ -141,7 +163,9 @@ def send_email(
         logger.error(f"SMTP error sending email: {e}")
         return False
     except Exception as e:
-        logger.error(f"Failed to send email: {e}")
+        logger.error(f"Failed to send email: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
 
 
@@ -168,13 +192,23 @@ def send_report_email(
     Returns:
         True if email sent successfully, False otherwise.
     """
-    return send_email(
+    logger = get_run_logger()
+    logger.info(f"send_report_email called:")
+    logger.info(f"  filepath: {filepath}")
+    logger.info(f"  filepath exists: {Path(filepath).exists()}")
+    logger.info(f"  recipients: {recipients}")
+    logger.info(f"  subject: {subject}")
+    logger.info(f"  email_block_name: {email_block_name}")
+    
+    result = send_email(
         recipients=recipients,
         subject=subject,
         body=body,
         attachments=[filepath],
         email_block_name=email_block_name,
     )
+    logger.info(f"send_email returned: {result}")
+    return result
 
 
 @task

@@ -389,6 +389,7 @@ def generate_comparison_report(
     """
     logger = get_run_logger()
     logger.info(f"Generating comparison report for {region}")
+    logger.info(f"email_variable parameter: {email_variable!r}")
 
     if target_date is None:
         target_date = datetime.date.today() - datetime.timedelta(days=1)
@@ -416,12 +417,17 @@ def generate_comparison_report(
     filename = f"Comparison_{display_name}_PP{pp_info['pay_period_number']}_{start_str}-{end_str}.xlsx"
 
     filepath = save_workbook_to_file(excel_bytes, filename)
+    logger.info(f"Report saved to: {filepath}")
 
     if save_to_db:
         save_report_to_database(db_config, excel_bytes, region, pp_info, "comparison")
 
+    # Email handling with detailed logging
+    logger.info(f"Checking email: email_variable={email_variable!r}")
     if email_variable:
+        logger.info(f"Fetching recipients from variable: {email_variable}")
         recipients = get_email_recipients(email_variable)
+        logger.info(f"Recipients returned: {recipients!r}")
         if recipients:
             subject = f"Comparison Report - {display_name} - PP{pp_info['pay_period_number']} ({start_str}-{end_str})"
             body = f"""
@@ -434,7 +440,13 @@ Dates: {pp_info['start_date'].strftime('%B %d')} - {pp_info['end_date'].strftime
 This report compares scheduled hours vs actual hours worked for the completed pay period.
 Variance shows the difference (Actual - Scheduled).
 """
-            send_report_email(filepath, recipients, subject, body)
+            logger.info(f"Calling send_report_email with filepath={filepath}, recipients={recipients}, subject={subject!r}")
+            result = send_report_email(filepath, recipients, subject, body)
+            logger.info(f"send_report_email returned: {result}")
+        else:
+            logger.warning(f"No recipients found in variable '{email_variable}', skipping email")
+    else:
+        logger.info("No email_variable provided, skipping email")
 
     return filepath
 

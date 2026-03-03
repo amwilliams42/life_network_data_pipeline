@@ -336,6 +336,7 @@ deployments:
     parameters:
       region: "tn_memphis"
       date: "2026-03-01"
+      email_variable: "schedule_report_recipients"
     schedule: []
 
   # Comparison Report - One Off (manual trigger only)
@@ -347,4 +348,5 @@ deployments:
     parameters:
       region: "tn_memphis"
       date: "2026-03-01"
+      email_variable: "schedule_report_recipients"
     schedule: []
