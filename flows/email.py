@@ -68,36 +68,78 @@ def send_email(
     Returns:
         True if email sent successfully, False otherwise.
     """
+    import smtplib
+    import ssl
+    from email.message import EmailMessage
+    from email.mime.base import MIMEBase
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email import encoders
+
     logger = get_run_logger()
 
     if not recipients:
         logger.warning("No recipients specified, skipping email")
         return False
 
-    # Convert paths to strings
-    attachment_paths = None
-    if attachments:
-        attachment_paths = [str(p) for p in attachments]
-
     try:
         credentials = EmailServerCredentials.load(email_block_name)
         
-        # Use provided email_from, or fall back to credentials username
         sender = email_from or credentials.username
         logger.info(f"Sending email from {sender} to {recipients}")
 
-        email_send_message(
-            email_server_credentials=credentials,
-            subject=subject,
-            msg=body,
-            email_to=recipients,
-            email_from=sender,
-            attachments=attachment_paths,
-        )
+        # Build the email message
+        if attachments:
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(body, "plain"))
+            
+            for attachment_path in attachments:
+                path = Path(attachment_path)
+                with open(path, "rb") as f:
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename={path.name}",
+                )
+                msg.attach(part)
+        else:
+            msg = EmailMessage()
+            msg.set_content(body)
 
-        logger.info(f"Sent email to {len(recipients)} recipients: {subject}")
+        msg["Subject"] = subject
+        msg["From"] = sender
+        msg["To"] = ", ".join(recipients)
+
+        # Create SSL context and send
+        context = ssl.create_default_context()
+        
+        smtp_type = str(credentials.smtp_type).upper()
+        logger.info(f"Connecting to {credentials.smtp_server}:{credentials.smtp_port} ({smtp_type})")
+        
+        if "SSL" in smtp_type:
+            with smtplib.SMTP_SSL(
+                credentials.smtp_server, 
+                credentials.smtp_port, 
+                context=context
+            ) as server:
+                server.login(credentials.username, credentials.password.get_secret_value())
+                server.send_message(msg)
+                logger.info(f"Sent email to {len(recipients)} recipients: {subject}")
+        else:
+            # STARTTLS
+            with smtplib.SMTP(credentials.smtp_server, credentials.smtp_port) as server:
+                server.starttls(context=context)
+                server.login(credentials.username, credentials.password.get_secret_value())
+                server.send_message(msg)
+                logger.info(f"Sent email to {len(recipients)} recipients: {subject}")
+        
         return True
 
+    except smtplib.SMTPException as e:
+        logger.error(f"SMTP error sending email: {e}")
+        return False
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
         return False
