@@ -2,8 +2,8 @@
 Schedule Flows - Tiered Reconciliation with Weekly Snapshots
 
 This module implements a tiered data reconciliation strategy for schedule data:
-1. Recent (every 10 min): Last 24 hours to 7 days ahead
-2. Weekly (Sunday 0200): Last full week (Sun-Sat) to 7 days ahead
+1. Recent (every 10 min): Last 24 hours to 14 days ahead (full pay period)
+2. Weekly (Sunday 0200): Last full week (Sun-Sat) to 14 days ahead (full pay period)
 3. Monthly (1st of month 0200): Last month, processed week by week
 4. Snapshot (Saturday 2359): Capture upcoming week's schedule before it starts
 
@@ -82,7 +82,7 @@ def load_schedule_recent(
     source_name: str,
 ) -> None:
     """
-    Load schedule data from the last 24 hours to 7 days ahead.
+    Load schedule data from the last 24 hours to 14 days ahead.
 
     Intended to run every 10 minutes for near-real-time reconciliation.
     """
@@ -90,7 +90,7 @@ def load_schedule_recent(
 
     now = datetime.datetime.now()
     start_date = now - datetime.timedelta(hours=24)
-    end_date = now + datetime.timedelta(days=7)
+    end_date = now + datetime.timedelta(days=14)
 
     logger.info(f"Loading recent schedule data: {start_date} to {end_date}")
 
@@ -113,7 +113,7 @@ def load_schedule_weekly(
     source_name: str,
 ) -> None:
     """
-    Load schedule data for the last full week (Sunday through Saturday) to 7 days ahead.
+    Load schedule data for the last full week (Sunday through Saturday) to 14 days ahead.
 
     Intended to run Sunday at 0200.
     """
@@ -127,8 +127,8 @@ def load_schedule_weekly(
     last_saturday = today - datetime.timedelta(days=days_since_saturday)
     # Last Sunday is 6 days before last Saturday
     last_sunday = last_saturday - datetime.timedelta(days=6)
-    # Include a week into the future for scheduled shifts
-    future_end = today + datetime.timedelta(days=7)
+    # Include two weeks into the future for scheduled shifts (full pay period)
+    future_end = today + datetime.timedelta(days=14)
 
     start_date = datetime.datetime.combine(last_sunday, datetime.time.min)
     end_date = datetime.datetime.combine(future_end, datetime.time.max)
