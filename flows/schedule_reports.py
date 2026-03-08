@@ -107,6 +107,44 @@ def fetch_pay_period_info(db_config: dict, region: str, target_date: datetime.da
 
 
 @task
+def fetch_upcoming_pay_period_info(db_config: dict, region: str) -> dict | None:
+    """Fetch the next upcoming pay period (starts after today)."""
+    logger = get_run_logger()
+    source_db = REGION_TO_SOURCE.get(region, region)
+    today = datetime.date.today()
+
+    query = """
+    SELECT pay_period_number, start_date, end_date
+    FROM staging.stg_pay_periods
+    WHERE source_database = %s
+      AND start_date > %s
+    ORDER BY start_date
+    LIMIT 1
+    """
+
+    conn = psycopg2.connect(**db_config)
+    cur = conn.cursor()
+    cur.execute(query, (source_db, today))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not result:
+        logger.warning(f"No upcoming pay period found for {region} after {today}")
+        return None
+
+    pp_info = {
+        "pay_period_number": result[0],
+        "start_date": result[1],
+        "end_date": result[2],
+        "source_database": source_db,
+        "region": region,
+    }
+    logger.info(f"Upcoming pay period {pp_info['pay_period_number']}: {pp_info['start_date']} to {pp_info['end_date']}")
+    return pp_info
+
+
+@task
 def fetch_shift_data(db_config: dict, region: str, pp_info: dict) -> list[dict]:
     """Fetch shift data for the pay period."""
     logger = get_run_logger()
@@ -316,18 +354,21 @@ def generate_schedule_report(
 
     Args:
         region: Region code (il, mi, tn_memphis, tn_nashville)
-        target_date: Date within pay period (defaults to tomorrow)
+        target_date: Date within pay period (if None, uses upcoming pay period)
         save_to_db: Whether to save report to database
         email_variable: Prefect variable name containing recipient list
     """
     logger = get_run_logger()
     logger.info(f"Generating schedule report for {region}")
 
-    if target_date is None:
-        target_date = datetime.date.today() + datetime.timedelta(days=1)
-
     db_config = get_db_config()
-    pp_info = fetch_pay_period_info(db_config, region, target_date)
+
+    if target_date is None:
+        # Default to upcoming pay period (starts after today)
+        pp_info = fetch_upcoming_pay_period_info(db_config, region)
+    else:
+        # Use specific date to find containing pay period
+        pp_info = fetch_pay_period_info(db_config, region, target_date)
 
     if not pp_info:
         logger.error(f"No pay period found for {region}")
