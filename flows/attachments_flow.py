@@ -1,4 +1,4 @@
-import datetime
+import time
 
 import dlt
 from dlt.sources.sql_database import sql_table
@@ -19,7 +19,7 @@ def load_attachments_pipeline(
     """
     logger = get_run_logger()
     pipeline = dlt.pipeline(
-        pipeline_name=f"attachments_{dataset_name}",
+        pipeline_name=f"attachments_{dataset_name}_{int(time.time())}",
         destination='postgres',
         dataset_name=dataset_name,
     )
