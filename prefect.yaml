@@ -147,6 +147,13 @@ _templates:
     entrypoint: flows/schedule_flows.py:snapshot_schedule_weekly
     work_pool: *default_work_pool
 
+  # Attachments deployment template
+  attachments_template: &attachments_template
+    description: Incrementally load attachments and attachments_log tables
+    schedule: *ten_minute_schedule
+    entrypoint: flows/attachments_flow.py:load_attachments
+    work_pool: *default_work_pool
+
 deployments:
   # Test deployment
   - name: Test Deployment
@@ -286,7 +293,22 @@ deployments:
     parameters: *state_il
     tags: *il_tags
 
-  
+  # Attachments (every 10 minutes - incremental load)
+  - <<: *attachments_template
+    name: TN Attachments
+    parameters: *state_tn
+    tags: *tn_tags
+
+  - <<: *attachments_template
+    name: MI Attachments
+    parameters: *state_mi
+    tags: *mi_tags
+
+  - <<: *attachments_template
+    name: IL Attachments
+    parameters: *state_il
+    tags: *il_tags
+
   # DBT deployment
   - name: DBT Run
     schedule: *one_hour_schedule
