@@ -3,10 +3,12 @@
 /*
     Attachment Compliance Analytics
 
-    One row per CREW MEMBER per RUN - enables flexible aggregation:
-    - Filter by market, call type, date range, crew member
-    - Aggregate compliance % dynamically in PowerBI
-    - Track individual vs team contribution
+    One row per CREW MEMBER per RUN - enables flexible aggregation.
+
+    Attribution Rules:
+    - If the finalize_user is a crew member on the run: only that person gets counted
+    - If the finalize_user is NOT a crew member (e.g., admin): all crew members get counted
+    - Compliance is based on whether ANY crew member uploaded attachments (team effort)
 
     Compliance Rules:
     - Only 'ran' runs count (not 'turned' or 'cancelled')
@@ -14,8 +16,7 @@
     - All other completed runs require attachments from crew members
 
     Key Metrics (aggregate in PowerBI):
-    - Team compliance: COUNT(is_compliant=true) / COUNT(requires_attachment=true)
-    - Individual rate: COUNT(crew_member_uploaded=true) / COUNT(requires_attachment=true)
+    - Compliance rate: COUNT(is_compliant=true) / COUNT(requires_attachment=true)
 */
 
 {% set datasets=['traumasoft_tn', 'traumasoft_mi', 'traumasoft_il'] %}
@@ -35,6 +36,28 @@ run_cancels AS (
 
 attachment_log AS (
     SELECT * FROM {{ ref('stg_attachment_log') }}
+),
+
+-- Get finalization info from epcr_v2_runs
+{% for dataset in datasets %}
+{% set suffix=dataset.split('_')[1] %}
+{{ suffix }}_epcr_runs AS (
+    SELECT
+        return_run_num AS run_number,
+        finalize_user,
+        finalized,
+        '{{ suffix }}' AS source_database
+    FROM {{ source(dataset, 'epcr_v2_runs') }}
+    WHERE return_run_num IS NOT NULL
+){% if not loop.last %},{% endif %}
+{% endfor %},
+
+all_epcr_runs AS (
+    SELECT * FROM tn_epcr_runs
+    UNION ALL
+    SELECT * FROM mi_epcr_runs
+    UNION ALL
+    SELECT * FROM il_epcr_runs
 ),
 
 -- Get crew assignments for each run (user_id per leg via shift assignments)
@@ -119,16 +142,6 @@ run_attachment_summary AS (
     GROUP BY leg_id, source_database
 ),
 
--- Track which specific users uploaded for each leg
-crew_uploads AS (
-    SELECT DISTINCT
-        leg_id,
-        uploader_user_id AS user_id,
-        source_database
-    FROM attachments_with_crew_flag
-    WHERE uploaded_by_crew_member = true
-),
-
 -- Base run data with proper run_outcome calculation
 run_base AS (
     SELECT
@@ -160,6 +173,10 @@ run_base AS (
         r.market,
         r.source_name,
         r.reason_for_transport,
+        -- Finalization info
+        epcr.finalize_user,
+        epcr.finalized,
+        -- Attachment summary
         COALESCE(ras.total_attachments, 0) AS total_attachments,
         COALESCE(ras.crew_attachments, 0) AS crew_attachments,
         ras.all_attachment_types,
@@ -181,6 +198,9 @@ run_base AS (
     LEFT JOIN run_cancels c
         ON r.leg_id = c.leg_id
         AND r.source_database = c.source_database
+    LEFT JOIN all_epcr_runs epcr
+        ON r.run_number = epcr.run_number
+        AND r.source_database = epcr.source_database
     LEFT JOIN run_attachment_summary ras
         ON r.leg_id = ras.leg_id
         AND r.source_database = ras.source_database
@@ -192,7 +212,24 @@ ran_runs AS (
     WHERE run_outcome = 'ran'
 ),
 
--- Final: one row per crew member per run
+-- Determine if finalize_user is a crew member on each run
+run_finalizer_is_crew AS (
+    SELECT DISTINCT
+        rb.leg_id,
+        rb.source_database,
+        rb.finalize_user,
+        CASE
+            WHEN lc.user_id IS NOT NULL THEN true
+            ELSE false
+        END AS finalizer_is_crew_member
+    FROM ran_runs rb
+    LEFT JOIN all_leg_crew lc
+        ON rb.leg_id = lc.leg_id
+        AND rb.source_database = lc.source_database
+        AND rb.finalize_user = lc.user_id
+),
+
+-- Final: one row per crew member per run, filtered by attribution rules
 crew_run_compliance AS (
     SELECT
         -- Crew member info
@@ -217,6 +254,12 @@ crew_run_compliance AS (
         rb.source_name,
         rb.reason_for_transport,
 
+        -- Finalization info
+        rb.finalize_user,
+        rb.finalized,
+        rfc.finalizer_is_crew_member,
+        CASE WHEN lc.user_id = rb.finalize_user THEN true ELSE false END AS is_finalizer,
+
         -- Attachment info
         rb.total_attachments,
         rb.crew_attachments,
@@ -224,13 +267,7 @@ crew_run_compliance AS (
         rb.first_attachment_time,
         rb.has_crew_attachment,
         rb.requires_attachment,
-        rb.is_compliant,
-
-        -- Individual contribution flag
-        CASE
-            WHEN cu.user_id IS NOT NULL THEN true
-            ELSE false
-        END AS crew_member_uploaded
+        rb.is_compliant
 
     FROM all_leg_crew lc
     INNER JOIN ran_runs rb
@@ -239,10 +276,16 @@ crew_run_compliance AS (
     LEFT JOIN all_users u
         ON lc.user_id = u.user_id
         AND lc.source_database = u.source_database
-    LEFT JOIN crew_uploads cu
-        ON lc.leg_id = cu.leg_id
-        AND lc.source_database = cu.source_database
-        AND lc.user_id = cu.user_id
+    LEFT JOIN run_finalizer_is_crew rfc
+        ON rb.leg_id = rfc.leg_id
+        AND rb.source_database = rfc.source_database
+    WHERE
+        -- Attribution rule: include this crew member if:
+        -- 1. They are the finalizer, OR
+        -- 2. The finalizer is not a crew member on this run (admin finalized)
+        lc.user_id = rb.finalize_user
+        OR rfc.finalizer_is_crew_member = false
+        OR rb.finalize_user IS NULL  -- Run not finalized yet, count all crew
 )
 
 SELECT * FROM crew_run_compliance
