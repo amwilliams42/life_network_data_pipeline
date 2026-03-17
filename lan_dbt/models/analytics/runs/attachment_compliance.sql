@@ -38,17 +38,18 @@ attachment_log AS (
     SELECT * FROM {{ ref('stg_attachment_log') }}
 ),
 
--- Get finalization info from epcr_v2_runs
+-- Get finalization info from epcr_v2_runs (deduplicated - one per run_number)
 {% for dataset in datasets %}
 {% set suffix=dataset.split('_')[1] %}
 {{ suffix }}_epcr_runs AS (
-    SELECT
+    SELECT DISTINCT ON (return_run_num)
         return_run_num AS run_number,
         finalize_user,
         finalized,
         '{{ suffix }}' AS source_database
     FROM {{ source(dataset, 'epcr_v2_runs') }}
     WHERE return_run_num IS NOT NULL
+    ORDER BY return_run_num, finalized DESC NULLS LAST, id DESC
 ){% if not loop.last %},{% endif %}
 {% endfor %},
 
