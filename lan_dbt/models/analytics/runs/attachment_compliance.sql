@@ -184,11 +184,11 @@ run_base AS (
         ras.first_attachment_time,
         CASE WHEN ras.crew_attachments > 0 THEN true ELSE false END AS has_crew_attachment,
         CASE
-            WHEN r.reason_for_transport IN ('Dialysis', 'Doctors Appointment') THEN false
+            WHEN r.reason_for_transport IN ('Dialysis', 'Doctors Appointment') or r.source_name like '%Vet Ride%' THEN false
             ELSE true
         END AS requires_attachment,
         CASE
-            WHEN r.reason_for_transport IN ('Dialysis', 'Doctors Appointment') THEN true
+            WHEN r.reason_for_transport IN ('Dialysis', 'Doctors Appointment') or r.source_name like '%Vet Ride%' THEN true
             WHEN ras.crew_attachments > 0 THEN true
             ELSE false
         END AS is_compliant
