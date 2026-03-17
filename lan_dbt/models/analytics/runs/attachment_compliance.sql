@@ -199,7 +199,7 @@ run_base AS (
         ON r.leg_id = c.leg_id
         AND r.source_database = c.source_database
     LEFT JOIN all_epcr_runs epcr
-        ON r.run_number = epcr.run_number
+        ON cast(r.run_number as varchar) = epcr.run_number
         AND r.source_database = epcr.source_database
     LEFT JOIN run_attachment_summary ras
         ON r.leg_id = ras.leg_id
