@@ -9,6 +9,7 @@
     - Track individual vs team contribution
 
     Compliance Rules:
+    - Only 'ran' runs count (not 'turned' or 'cancelled')
     - Dialysis and Doctors Appointment runs do NOT require attachments
     - All other completed runs require attachments from crew members
 
@@ -26,6 +27,10 @@ runs AS (
 
 run_timestamps AS (
     SELECT * FROM {{ ref('stg_run_timestamps') }}
+),
+
+run_cancels AS (
+    SELECT * FROM {{ ref('stg_run_cancels') }}
 ),
 
 attachment_log AS (
@@ -124,13 +129,14 @@ crew_uploads AS (
     WHERE uploaded_by_crew_member = true
 ),
 
--- Base run data
+-- Base run data with proper run_outcome calculation
 run_base AS (
     SELECT
         r.run_number,
         r.leg_id,
         r.pcr_number,
         r.source_database,
+        r.last_status_id,
         CASE
             WHEN r.source_database = 'il' THEN 'il'
             WHEN r.source_database = 'mi' THEN 'mi'
@@ -138,6 +144,14 @@ run_base AS (
             WHEN r.source_database = 'tn' AND r.market IN ('Nashville', 'Event - NASH') THEN 'tn_nashville'
             ELSE r.source_database
         END AS region,
+        -- Run outcome (same logic as bq_runs)
+        CASE
+            WHEN r.last_status_id > 0 THEN 'ran'
+            WHEN r.last_status_id < 0 AND c.lost_call_status IS NOT NULL THEN 'turned'
+            WHEN r.last_status_id < 0 AND c.lost_call_status IS NULL THEN 'cancelled'
+            WHEN r.last_status_id IS NULL THEN 'cancelled'
+            ELSE 'unknown'
+        END AS run_outcome,
         rt.service_date,
         DATE_TRUNC('week', rt.service_date)::date AS week_start,
         DATE_TRUNC('month', rt.service_date)::date AS month_start,
@@ -164,10 +178,18 @@ run_base AS (
     INNER JOIN run_timestamps rt
         ON r.leg_id = rt.leg_id
         AND r.source_database = rt.source_database
+    LEFT JOIN run_cancels c
+        ON r.leg_id = c.leg_id
+        AND r.source_database = c.source_database
     LEFT JOIN run_attachment_summary ras
         ON r.leg_id = ras.leg_id
         AND r.source_database = ras.source_database
-    WHERE r.last_status_id > 0
+),
+
+-- Filter to only 'ran' runs
+ran_runs AS (
+    SELECT * FROM run_base
+    WHERE run_outcome = 'ran'
 ),
 
 -- Final: one row per crew member per run
@@ -185,6 +207,7 @@ crew_run_compliance AS (
         rb.pcr_number,
         rb.source_database,
         rb.region,
+        rb.run_outcome,
         rb.service_date,
         rb.week_start,
         rb.month_start,
@@ -210,7 +233,7 @@ crew_run_compliance AS (
         END AS crew_member_uploaded
 
     FROM all_leg_crew lc
-    INNER JOIN run_base rb
+    INNER JOIN ran_runs rb
         ON lc.leg_id = rb.leg_id
         AND lc.source_database = rb.source_database
     LEFT JOIN all_users u
