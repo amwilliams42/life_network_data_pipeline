@@ -18,7 +18,8 @@ BIGQUERY_TABLES = [
     "daily_dashboard",
     "bq_users",
     "bq_runs",
-    "bq_shifts"
+    "bq_shifts",
+    "bq_attachment_compliance",
 ]
 
 
