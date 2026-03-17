@@ -45,6 +45,20 @@ table_definitions: &common_tables
   - name: sched_vehicles
   - name: sched_pay_periods
     description: "Pay period definitions with start/end dates and closure status"
+  - name: attachments
+    description: "File attachments stored in the system"
+  - name: attachments_log
+    description: "Audit log of attachment actions (create, update, delete)"
+  - name: cad_trip_leg_attachments
+    description: "Links attachments to specific trip legs"
+  - name: cad_trip_leg_attachment_types
+    description: "Junction table linking trip leg attachments to attachment types"
+  - name: ibd_attachment_types
+    description: "Attachment type definitions (e.g., PCS, Face Sheet, etc.)"
+  - name: ibd_companies
+    description: "Company/facility definitions"
+  - name: cad_calls
+    description: "CAD call records"
 
 # Source definitions using the common template
 sources:
