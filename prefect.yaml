@@ -149,8 +149,8 @@ _templates:
 
   # Attachments deployment template
   attachments_template: &attachments_template
-    description: Incrementally load attachments and attachments_log tables
-    schedule: *ten_minute_schedule
+    description: Daily load of attachment tables for compliance tracking
+    schedule: *daily_2am_schedule
     entrypoint: flows/attachments_flow.py:load_attachments
     work_pool: *default_work_pool
 

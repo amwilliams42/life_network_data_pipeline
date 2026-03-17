@@ -12,10 +12,12 @@ def load_attachments_pipeline(
         source_name: str
 ) -> None:
     """
-    Incrementally load attachments and attachments_log tables.
+    Incrementally load attachment-related tables.
 
     - attachments: incremental on 'date' column
     - attachments_log: incremental on 'timestamp' column
+    - cad_trip_leg_attachments: links attachments to trip legs
+    - cad_trip_leg_attachment_types: links attachments to attachment types
     """
     logger = get_run_logger()
     pipeline = dlt.pipeline(
@@ -52,7 +54,27 @@ def load_attachments_pipeline(
         ),
     )
 
-    info = pipeline.run([attachments, attachments_log])
+    # cad_trip_leg_attachments - links attachments to trip legs
+    leg_attachments = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="cad_trip_leg_attachments",
+    )
+    leg_attachments.apply_hints(
+        primary_key="id",
+        write_disposition="merge",
+    )
+
+    # cad_trip_leg_attachment_types - links leg attachments to types
+    leg_attachment_types = sql_table(
+        credentials=dlt.secrets[f"sources.{source_name}.credentials"],
+        table="cad_trip_leg_attachment_types",
+    )
+    leg_attachment_types.apply_hints(
+        primary_key="id",
+        write_disposition="merge",
+    )
+
+    info = pipeline.run([attachments, attachments_log, leg_attachments, leg_attachment_types])
     logger.info(f"Finished loading attachments tables: {info}")
 
 
