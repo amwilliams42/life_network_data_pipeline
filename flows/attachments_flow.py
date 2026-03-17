@@ -64,13 +64,13 @@ def load_attachments_pipeline(
         write_disposition="merge",
     )
 
-    # cad_trip_leg_attachment_types - links leg attachments to types
+    # cad_trip_leg_attachment_types - junction table (composite key: trip_leg_attachment_id, type_id)
     leg_attachment_types = sql_table(
         credentials=dlt.secrets[f"sources.{source_name}.credentials"],
         table="cad_trip_leg_attachment_types",
     )
     leg_attachment_types.apply_hints(
-        primary_key="id",
+        primary_key=["trip_leg_attachment_id", "type_id"],
         write_disposition="merge",
     )
 
