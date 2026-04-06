@@ -163,14 +163,12 @@ runs_enriched AS (
         ROUND(rt.response_time_minutes::numeric, 2) AS response_time_minutes,
         ROUND(rt.total_unit_time_minutes::numeric, 2) AS total_unit_time_minutes,
 
-        -- Time on Task (enroute to clear, in minutes)
-        -- Capped at 720 minutes (12 hours) to handle bad data where clear_time is incorrect
+        -- Raw time on task calculation (enroute to clear, in minutes)
         CASE
             WHEN rt.enroute_time IS NOT NULL AND rt.clear_time IS NOT NULL
                 AND rt.clear_time > rt.enroute_time
-                AND EXTRACT(EPOCH FROM (rt.clear_time - rt.enroute_time)) / 60.0 <= 720
             THEN ROUND((EXTRACT(EPOCH FROM (rt.clear_time - rt.enroute_time)) / 60.0)::numeric, 2)
-        END AS time_on_task_minutes,
+        END AS raw_time_on_task_minutes,
 
         -- Location details
         loc.pickup_facility,
@@ -242,11 +240,104 @@ runs_enriched AS (
     LEFT JOIN pay_periods pp
         ON rt.service_date >= pp.start_date
         AND rt.service_date <= pp.end_date
+),
+
+-- Apply time on task adjustments for bad data
+runs_with_adjusted_tot AS (
+    SELECT
+        *,
+        -- Time on Task (enroute to clear, in minutes)
+        -- Logic:
+        --   - Valid time (<= 12 hrs): use as-is
+        --   - Invalid time (> 12 hrs) with mileage < 500: substitute with 100 min average
+        --   - Invalid time (> 12 hrs) with mileage >= 500: cap at 24 hrs (rare long-distance transfers)
+        CASE
+            WHEN raw_time_on_task_minutes IS NULL THEN NULL
+            WHEN raw_time_on_task_minutes <= 720 THEN raw_time_on_task_minutes
+            WHEN raw_time_on_task_minutes > 720 AND COALESCE(mileage, 0) < 500 THEN 100.00
+            WHEN raw_time_on_task_minutes > 720 AND mileage >= 500 THEN LEAST(raw_time_on_task_minutes, 1440)
+        END AS time_on_task_minutes
+    FROM runs_enriched
 )
 
 SELECT DISTINCT ON (leg_id, source_database)
-    *
-FROM runs_enriched
+    -- Select all columns except raw_time_on_task_minutes, include adjusted time_on_task_minutes
+    run_number,
+    leg_id,
+    pcr_number,
+    source_database,
+    region,
+    division,
+    service_date,
+    pickup_time,
+    day_of_week,
+    day_name,
+    pickup_hour,
+    week_start,
+    month_start,
+    pay_period_year,
+    pay_period_number,
+    pay_period_start,
+    pay_period_end,
+    is_current_pay_period,
+    calltype_name,
+    level_of_service,
+    market,
+    source_name,
+    reason_for_transport,
+    priority_id,
+    transport_priority_id,
+    emergency,
+    trip_status,
+    last_status_id,
+    vehicle,
+    run_outcome,
+    cancel_reason_name,
+    canceled_by,
+    lost_call_status,
+    call_started_date,
+    assigned_time,
+    acknowledged_time,
+    enroute_time,
+    at_scene_time,
+    transporting_time,
+    at_destination_time,
+    clear_time,
+    canceled_time,
+    appointment_time,
+    requested_pickup_time,
+    orig_pickup_time,
+    call_to_assignment_minutes,
+    assignment_to_ack_minutes,
+    ack_to_enroute_minutes,
+    response_leg_minutes,
+    scene_time_minutes,
+    transport_time_minutes,
+    destination_to_clear_minutes,
+    response_time_minutes,
+    total_unit_time_minutes,
+    time_on_task_minutes,
+    pickup_facility,
+    pickup_city,
+    pickup_state,
+    dropoff_facility,
+    dropoff_city,
+    dropoff_state,
+    mileage,
+    is_long_distance,
+    shift_assignment_id,
+    is_transport_run,
+    is_critical_care,
+    is_flight_crew,
+    pickup_variance_minutes,
+    is_on_time,
+    is_today,
+    is_future,
+    is_today_or_future,
+    days_from_today,
+    created_timestamp,
+    modified_timestamp
+FROM runs_with_adjusted_tot
 ORDER BY
     leg_id,
     source_database,
