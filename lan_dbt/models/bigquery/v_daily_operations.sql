@@ -143,7 +143,7 @@ WITH daily_transports AS (
     -- On-time metrics
     COALESCE(t.on_time_count, 0) AS on_time_count,
     COALESCE(t.on_time_eligible_count, 0) AS on_time_eligible_count,
-    t.on_time_count::numeric / NULLIF(t.on_time_eligible_count, 0) AS on_time_percentage,
+    ROUND(t.on_time_count::numeric / NULLIF(t.on_time_eligible_count, 0), 4) AS on_time_percentage,
 
     -- Time on task
     COALESCE(t.total_time_on_task_minutes, 0) AS total_time_on_task_minutes,
@@ -153,8 +153,8 @@ WITH daily_transports AS (
     ) AS time_on_task_percent,
 
     -- UHU (transports per unit hour: transports / labor hours * 2 crew per unit)
-    t.total_transports::numeric / NULLIF(s.fully_loaded_hours, 0) * 2 AS fully_loaded_uhu,
-    t.total_transports::numeric / NULLIF(s.clean_labor_hours, 0) * 2 AS clean_uhu,
+    ROUND(t.total_transports::numeric / NULLIF(s.fully_loaded_hours, 0) * 2, 4) AS fully_loaded_uhu,
+    ROUND(t.total_transports::numeric / NULLIF(s.clean_labor_hours, 0) * 2, 4) AS clean_uhu,
 
     -- Reference metrics
     COALESCE(t.cancelled_calls, 0) AS cancelled_calls,
