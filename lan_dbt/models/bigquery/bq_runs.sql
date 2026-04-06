@@ -163,9 +163,12 @@ runs_enriched AS (
         ROUND(rt.response_time_minutes::numeric, 2) AS response_time_minutes,
         ROUND(rt.total_unit_time_minutes::numeric, 2) AS total_unit_time_minutes,
 
-        -- Time on Task (assigned to clear, in minutes)
+        -- Time on Task (enroute to clear, in minutes)
+        -- Capped at 720 minutes (12 hours) to handle bad data where clear_time is incorrect
         CASE
             WHEN rt.enroute_time IS NOT NULL AND rt.clear_time IS NOT NULL
+                AND rt.clear_time > rt.enroute_time
+                AND EXTRACT(EPOCH FROM (rt.clear_time - rt.enroute_time)) / 60.0 <= 720
             THEN ROUND((EXTRACT(EPOCH FROM (rt.clear_time - rt.enroute_time)) / 60.0)::numeric, 2)
         END AS time_on_task_minutes,
 
