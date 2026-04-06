@@ -20,6 +20,7 @@ BIGQUERY_TABLES = [
     "bq_runs",
     "bq_shifts",
     "bq_attachment_compliance",
+    "v_daily_operations"
 ]
 
 
