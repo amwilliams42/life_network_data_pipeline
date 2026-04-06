@@ -7,27 +7,27 @@ WITH daily_transports AS (
       service_date,
 
       -- Transport counts by service level (excluding Medicar, NEV, Standbys)
-      COUNTIF(calltype_name = 'BLS' AND run_outcome = 'ran') AS bls_transports,
-      COUNTIF(calltype_name = 'ALS' AND run_outcome = 'ran') AS als_transports,
-      COUNTIF(calltype_name = 'CCT' AND run_outcome = 'ran') AS sct_transports,
-      COUNTIF(calltype_name IN ('Flight Crew', 'Flight Crew Return Only') AND run_outcome = 'ran') AS flight_transports,
+      COUNT(*) FILTER (WHERE calltype_name = 'BLS' AND run_outcome = 'ran') AS bls_transports,
+      COUNT(*) FILTER (WHERE calltype_name = 'ALS' AND run_outcome = 'ran') AS als_transports,
+      COUNT(*) FILTER (WHERE calltype_name = 'CCT' AND run_outcome = 'ran') AS sct_transports,
+      COUNT(*) FILTER (WHERE calltype_name IN ('Flight Crew', 'Flight Crew Return Only') AND run_outcome = 'ran') AS flight_transports,
 
       -- Total transports (excluding Medicar, NEV, Standbys)
-      COUNTIF(
+      COUNT(*) FILTER (WHERE
         run_outcome = 'ran'
         AND calltype_name NOT IN ('Medicar', 'NEV - Wheelchair', 'Standby - ALS', 'Standby - BLS', 'Standby - Medicar')
       ) AS total_transports,
 
       -- Long distance transports (>50 miles)
-      COUNTIF(
+      COUNT(*) FILTER (WHERE
         run_outcome = 'ran'
         AND mileage > 50
         AND calltype_name NOT IN ('Medicar', 'NEV - Wheelchair', 'Standby - ALS', 'Standby - BLS', 'Standby - Medicar')
       ) AS ldt_over_50_miles,
 
       -- On-time performance
-      COUNTIF(run_outcome = 'ran' AND is_on_time = TRUE) AS on_time_count,
-      COUNTIF(run_outcome = 'ran' AND is_on_time IS NOT NULL) AS on_time_eligible_count,
+      COUNT(*) FILTER (WHERE run_outcome = 'ran' AND is_on_time = TRUE) AS on_time_count,
+      COUNT(*) FILTER (WHERE run_outcome = 'ran' AND is_on_time IS NOT NULL) AS on_time_eligible_count,
 
       -- Time on task (excluding Medicar, NEV, Standbys to match clean_labor_hours denominator)
       SUM(CASE
@@ -38,10 +38,10 @@ WITH daily_transports AS (
       END) AS total_time_on_task_minutes,
 
       -- Cancelled and turned calls
-      COUNTIF(run_outcome = 'cancelled') AS cancelled_calls,
-      COUNTIF(run_outcome = 'turned') AS turned_calls
+      COUNT(*) FILTER (WHERE run_outcome = 'cancelled') AS cancelled_calls,
+      COUNT(*) FILTER (WHERE run_outcome = 'turned') AS turned_calls
 
-    FROM {{ref('bq_runs')}}
+    FROM {{ ref('bq_runs') }}
     WHERE service_date IS NOT NULL
       AND region IS NOT NULL
     GROUP BY region, service_date
@@ -85,8 +85,8 @@ WITH daily_transports AS (
         THEN s.scheduled_hours ELSE 0
       END) AS medic_special_event_hours
 
-    FROM {{ref('bq_shifts')}} s
-    LEFT JOIN {{ref('bq_users')}} u
+    FROM {{ ref('bq_shifts') }} s
+    LEFT JOIN {{ ref('bq_users') }} u
       ON s.user_id = u.user_id AND s.source_database = u.source_database
     WHERE s.shift_date IS NOT NULL
       AND s.region IS NOT NULL
@@ -109,18 +109,15 @@ WITH daily_transports AS (
 
     COALESCE(t.service_date, s.shift_date) AS report_date,
 
-    CONCAT(
-      FORMAT_DATE('%m/%d/%Y', COALESCE(t.service_date, s.shift_date)),
-      '\n',
-      FORMAT_DATE('%A', COALESCE(t.service_date, s.shift_date))
-    ) AS report_date_display,
+    TO_CHAR(COALESCE(t.service_date, s.shift_date), 'MM/DD/YYYY') || E'\n' ||
+      TO_CHAR(COALESCE(t.service_date, s.shift_date), 'Day') AS report_date_display,
 
     -- Date dimensions
-    EXTRACT(YEAR FROM COALESCE(t.service_date, s.shift_date)) AS report_year,
-    EXTRACT(MONTH FROM COALESCE(t.service_date, s.shift_date)) AS report_month,
-    FORMAT_DATE('%B %Y', COALESCE(t.service_date, s.shift_date)) AS report_month_name,
-    FORMAT_DATE('%A', COALESCE(t.service_date, s.shift_date)) AS day_of_week,
-    EXTRACT(DAYOFWEEK FROM COALESCE(t.service_date, s.shift_date)) AS day_of_week_num,
+    EXTRACT(YEAR FROM COALESCE(t.service_date, s.shift_date))::int AS report_year,
+    EXTRACT(MONTH FROM COALESCE(t.service_date, s.shift_date))::int AS report_month,
+    TO_CHAR(COALESCE(t.service_date, s.shift_date), 'Month YYYY') AS report_month_name,
+    TO_CHAR(COALESCE(t.service_date, s.shift_date), 'Day') AS day_of_week,
+    EXTRACT(DOW FROM COALESCE(t.service_date, s.shift_date))::int AS day_of_week_num,
 
     -- Ambulance counts
     COALESCE(s.ambulances_up_am, 0) AS ambulances_up_am,
@@ -146,20 +143,18 @@ WITH daily_transports AS (
     -- On-time metrics
     COALESCE(t.on_time_count, 0) AS on_time_count,
     COALESCE(t.on_time_eligible_count, 0) AS on_time_eligible_count,
-    SAFE_DIVIDE(t.on_time_count, t.on_time_eligible_count) AS on_time_percentage,
+    t.on_time_count::numeric / NULLIF(t.on_time_eligible_count, 0) AS on_time_percentage,
 
     -- Time on task
     COALESCE(t.total_time_on_task_minutes, 0) AS total_time_on_task_minutes,
     ROUND(
-      SAFE_DIVIDE(
-        COALESCE(t.total_time_on_task_minutes / 60.0, 0),
-        s.clean_labor_hours
-      ) * 2, 4
+      (COALESCE(t.total_time_on_task_minutes / 60.0, 0) / NULLIF(s.clean_labor_hours, 0)) * 2,
+      4
     ) AS time_on_task_percent,
 
     -- UHU (transports per unit hour: transports / labor hours * 2 crew per unit)
-    SAFE_DIVIDE(t.total_transports, s.fully_loaded_hours) * 2 AS fully_loaded_uhu,
-    SAFE_DIVIDE(t.total_transports, s.clean_labor_hours) * 2 AS clean_uhu,
+    t.total_transports::numeric / NULLIF(s.fully_loaded_hours, 0) * 2 AS fully_loaded_uhu,
+    t.total_transports::numeric / NULLIF(s.clean_labor_hours, 0) * 2 AS clean_uhu,
 
     -- Reference metrics
     COALESCE(t.cancelled_calls, 0) AS cancelled_calls,
