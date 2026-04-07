@@ -106,7 +106,7 @@ WITH daily_transports AS (
       AND s.region IS NOT NULL
       AND s.is_assigned = TRUE
       AND s.region IN ('il', 'mi', 'tn_memphis', 'tn_nashville')
-      AND (s.is_field_shift = TRUE OR s.is_special_event = TRUE OR s.is_orientation = TRUE)
+      AND (s.is_field_shift = TRUE OR s.is_special_event = TRUE OR s.is_orientation = TRUE or s.cost_center_name IN ('Memp-St. Jude (911)'))
     GROUP BY s.region, s.shift_date
   )
 
