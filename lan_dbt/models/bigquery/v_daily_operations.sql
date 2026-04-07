@@ -70,7 +70,7 @@ WITH daily_transports AS (
 
       -- 911 hours worked
       SUM(CASE
-        WHEN s.cost_center_name IN ('Lincoln Park Rescue', 'St. Jude 911')
+        WHEN s.cost_center_name IN ('Lincoln Park Rescue', 'Memp-St. Jude (911)')
         THEN s.actual_hours_worked
         ELSE 0
       END) AS hours_worked_911,
