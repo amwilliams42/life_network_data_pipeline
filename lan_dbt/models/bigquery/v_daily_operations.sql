@@ -24,7 +24,13 @@ WITH daily_transports AS (
         AND mileage > 50
         AND calltype_name NOT IN ('Medicar', 'NEV - Wheelchair', 'Standby - ALS', 'Standby - BLS', 'Standby - Medicar')
       ) AS ldt_over_50_miles,
-
+      -- Michigan 911 calls
+      case when region = 'mi' then
+          COUNT(*) FILTER (WHERE level_of_service = 'Lincoln Park Rescue')
+        when region = 'tn_memphis' then
+          COUNT(*) FILTER (WHERE level_of_service = 'St. Jude 911')
+        end
+      AS 911_calls,
       -- On-time performance
       COUNT(*) FILTER (WHERE run_outcome = 'ran' AND is_on_time = TRUE) AS on_time_count,
       COUNT(*) FILTER (WHERE run_outcome = 'ran' AND is_on_time IS NOT NULL) AS on_time_eligible_count,
@@ -59,12 +65,24 @@ WITH daily_transports AS (
 
       -- Clean labor hours = field shifts only, excluding training and orientation
       SUM(CASE
-        WHEN s.is_field_shift = TRUE AND s.is_training = FALSE AND s.is_orientation = FALSE AND s.actual_hours_worked > 0
+        WHEN s.is_field_shift = TRUE AND s.is_training = FALSE AND s.is_orientation = FALSE AND s.actual_hours_worked > 0 AND s.cost_center_name NOT IN ('Memp-St. Jude (911)')
         THEN s.actual_hours_worked ELSE 0
       END) AS clean_labor_hours,
 
+      -- 911 hours worked
+        case when region = 'mi' then
+          SUM(CASE
+            WHEN s.cost_center_name = 'Lincoln Park Rescue'
+          )
+      when region = 'tn_memphis' then
+          SUM(CASE
+            WHEN s.cost_center_name = 'St. Jude 911'
+          )
+        end
+      AS 911_hours_worked,
+
       -- Fully loaded hours = field + special event + orientation + training
-      SUM(CASE
+      SUM(CASE s.is_field_shift = TRUE AND s.is_trais.is_ning = FALSE AND s.is_orientation = FALSE AND s.actual_hours_worked > 0 AND s.cost_center_name = 'Memp-St. Jude (911)'
         WHEN (s.is_field_shift = TRUE OR s.is_special_event = TRUE OR s.is_orientation = TRUE OR s.is_training = TRUE) AND s.actual_hours_worked > 0
         THEN s.actual_hours_worked ELSE 0
       END) AS fully_loaded_hours,
@@ -76,13 +94,13 @@ WITH daily_transports AS (
       SUM(CASE
         WHEN s.is_special_event = TRUE
           AND u.job_title IN ('EMT Basic', 'EMT - Basic', 'EMT - Advanced', 'Advanced EMT')
-        THEN s.scheduled_hours ELSE 0
+        THEN s.actual_hours_worked ELSE 0
       END) AS emt_special_event_hours,
 
       SUM(CASE
         WHEN s.is_special_event = TRUE
           AND u.job_title IN ('Paramedic', 'Paramedic - Crit Care', 'Paramedic - Supervisor', 'Paramedic - Vent', 'Critical Care Paramedic')
-        THEN s.scheduled_hours ELSE 0
+        THEN s.actual_hours_worked ELSE 0
       END) AS medic_special_event_hours
 
     FROM {{ ref('bq_shifts') }} s
@@ -131,6 +149,7 @@ WITH daily_transports AS (
     COALESCE(t.flight_transports, 0) AS flight_transports,
     COALESCE(t.total_transports, 0) AS total_transports,
     COALESCE(t.ldt_over_50_miles, 0) AS ldt_over_50_miles,
+    COALESCE(t.911_calls, 0) AS 911_calls,
 
     -- Hours
     COALESCE(s.fully_loaded_hours, 0) AS fully_loaded_hours,
@@ -139,6 +158,7 @@ WITH daily_transports AS (
     COALESCE(s.clean_labor_hours, 0) AS clean_labor_hours,
     COALESCE(s.emt_special_event_hours, 0) AS emt_special_event_hours,
     COALESCE(s.medic_special_event_hours, 0) AS medic_special_event_hours,
+    COALESCE(s.911_hours_worked, 0) AS 911_hours_worked,
 
     -- On-time metrics
     COALESCE(t.on_time_count, 0) AS on_time_count,
